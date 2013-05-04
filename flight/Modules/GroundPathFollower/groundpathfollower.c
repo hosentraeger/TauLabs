@@ -102,7 +102,7 @@ static struct pid ground_pids[GROUND_PID_NUM];
  * Initialise the module, called on startup
  * \returns 0 on success or -1 if initialisation failed
  */
-static int32_t GroundPathFollowerStart()
+int32_t GroundPathFollowerStart()
 {
 	if (module_enabled) {
 		// Start main task
@@ -117,7 +117,7 @@ static int32_t GroundPathFollowerStart()
  * Initialise the module, called on startup
  * \returns 0 on success or -1 if initialisation failed
  */
-static int32_t GroundPathFollowerInitialize()
+int32_t GroundPathFollowerInitialize()
 {
 #ifdef MODULE_GroundPathFollower_BUILTIN
 	module_enabled = true;
@@ -368,6 +368,14 @@ void updateEndpointVelocity()
 	velocityDesired.Down = 0;
 
 	VelocityDesiredSet(&velocityDesired);
+
+	// Indicate whether we are in radius of this endpoint
+	uint8_t path_status = PATHSTATUS_STATUS_INPROGRESS;
+	float distance2 = powf(northError, 2) + powf(eastError, 2);
+	if (distance2 < (guidanceSettings.EndpointRadius * guidanceSettings.EndpointRadius)) {
+		path_status = PATHSTATUS_STATUS_COMPLETED;
+	}
+	PathStatusStatusSet(&path_status);
 }
 
 /**
