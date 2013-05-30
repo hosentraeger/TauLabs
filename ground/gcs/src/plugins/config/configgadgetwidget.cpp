@@ -3,7 +3,7 @@
  *
  * @file       configgadgetwidget.cpp
  * @author     E. Lafargue & The OpenPilot Team, http://www.openpilot.org Copyright (C) 2010.
- * @author     Tau Labs, http://www.taulabs.org, Copyright (C) 2013
+ * @author     Tau Labs, http://taulabs.org, Copyright (C) 2013
  * @addtogroup GCSPlugins GCS Plugins
  * @{
  * @addtogroup ConfigPlugin Config Plugin
@@ -207,14 +207,7 @@ void ConfigGadgetWidget::onAutopilotConnect() {
             qwd = new ConfigCCHWWidget(this);
             ftw->insertTab(ConfigGadgetWidget::hardware, qwd, *icon, QString("Hardware"));
             ftw->setCurrentIndex(ConfigGadgetWidget::hardware);
-        } else if ((board & 0xff00) == 0x0900 || // RevoMini
-                   (board & 0xff00) == 0x7F00 || // Revolution
-                   (board & 0xff00) == 0x8100 || // Freedom
-                   (board & 0xff00) == 0x8300 || // FlyingF3
-                   (board & 0xff00) == 0x8400 || // FlyingF4
-                   (board & 0xff00) == 0x8500 || // DiscoveryF4
-                   (board & 0xff00) == 0x8600    // Quanton
-                   ) {
+        } else {
             // Non-CopterControl family
             ftw->setCurrentIndex(ConfigGadgetWidget::hardware);
             ftw->removeTab(ConfigGadgetWidget::hardware);
@@ -224,9 +217,6 @@ void ConfigGadgetWidget::onAutopilotConnect() {
             QWidget *qwd = new DefaultHwSettingsWidget(this, true);
             ftw->insertTab(ConfigGadgetWidget::hardware, qwd, *icon, QString("Hardware"));
             ftw->setCurrentIndex(ConfigGadgetWidget::hardware);
-        } else {
-            //Unknown board
-            qDebug() << "Unknown board " << board;
         }
     }
 

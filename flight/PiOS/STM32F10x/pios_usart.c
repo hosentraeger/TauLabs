@@ -8,6 +8,7 @@
  *
  * @file       pios_usart.c   
  * @author     The OpenPilot Team, http://www.openpilot.org Copyright (C) 2010.
+ * @author     Tau Labs, http://taulabs.org, Copyright (C) 2012-2013
  * @brief      USART commands. Inits USARTs, controls USARTs & Interupt handlers. (STM32 dependent)
  * @see        The GNU Public License (GPL) Version 3
  *
@@ -321,9 +322,7 @@ static void PIOS_USART_generic_irq_handler(uint32_t usart_id)
 	}
 
 #if defined(PIOS_INCLUDE_FREERTOS)
-	if (rx_need_yield || tx_need_yield) {
-		vPortYieldFromISR();
-	}
+	portEND_SWITCHING_ISR(rx_need_yield || tx_need_yield);
 #endif	/* PIOS_INCLUDE_FREERTOS */
 }
 

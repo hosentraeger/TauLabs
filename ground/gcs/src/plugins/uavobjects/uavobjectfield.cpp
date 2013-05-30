@@ -192,6 +192,8 @@ void UAVObjectField::limitsInitialize(const QString &limits)
 
     }
 }
+
+
 bool UAVObjectField::isWithinLimits(QVariant var,quint32 index, int board)
 {
     if(!elementLimits.keys().contains(index))

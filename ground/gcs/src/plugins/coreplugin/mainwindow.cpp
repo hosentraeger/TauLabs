@@ -378,7 +378,7 @@ void MainWindow::loadStyleSheet(QString name) {
         qApp->setStyleSheet(style);
     }
     else
-        qDebug()<<"Failed to openstylesheet file"<<directory.absolutePath()<<name;
+        qDebug()<<"Failed to openstylesheet file" << directory.absolutePath() << name;
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)

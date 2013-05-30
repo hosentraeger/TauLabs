@@ -1,16 +1,15 @@
 /**
  ******************************************************************************
- * @file       groundpathfollower.c
- * @author     The OpenPilot Team, http://www.openpilot.org Copyright (C) 2012.
- * @author     Tau Labs, http://www.taulabs.org Copyright (C) 2013.
- * @brief      This module compares @ref PositionActual to @ref PathDesired
- * and sets @ref Stabilization.  It only does this when the FlightMode field
- * of @ref FlightStatus is PathPlanner or RTH.
- * @addtogroup OpenPilotModules OpenPilot Modules
+ * @addtogroup TauLabsModules Tau Labs Modules
  * @{
  * @addtogroup GroundPathFollower Path follower for ground based vehicles
- * @brief Perform the flight segment requested by @ref PathDesired
  * @{
+ *
+ * @file       groundpathfollower.c
+ * @author     The OpenPilot Team, http://www.openpilot.org Copyright (C) 2012.
+ * @author     Tau Labs, http://taulabs.org, Copyright (C) 2013
+ * @brief      Perform the path segment requested by @ref PathDesired
+
  *****************************************************************************/
 /*
  * This program is free software; you can redistribute it and/or modify
@@ -35,17 +34,9 @@
  * Output object: StabilizationDesired
  *
  * This module will periodically update the value of the @ref StabilizationDesired object based on
- * @ref PathDesired and @PositionActual when the Flight Mode selected in @FlightStatus is supported
+ * @ref PathDesired and @ref PositionActual when the Flight Mode selected in @ref FlightStatus is supported
  * by this module.  Otherwise another module (e.g. @ref ManualControlCommand) is expected to be
  * writing to @ref StabilizationDesired.
- *
- * The module executes in its own thread in this example.
- *
- * Modules have no API, all communication to other modules is done through UAVObjects.
- * However modules may use the API exposed by shared libraries.
- * See the OpenPilot wiki for more details.
- * http://www.openpilot.org/OpenPilot_Application_Architecture
- *
  */
 
 #include "openpilot.h"
@@ -72,7 +63,7 @@
 #include "velocitydesired.h"
 #include "velocityactual.h"
 #include "groundpathfollowersettings.h"
-#include "CoordinateConversions.h"
+#include "coordinate_conversions.h"
 
 // Private constants
 #define MAX_QUEUE_SIZE 4
@@ -326,26 +317,8 @@ void updateEndpointVelocity()
 	float northCommand;
 	float eastCommand;
 
-	float northPos = 0;
-	float eastPos = 0;
-
-	switch (guidanceSettings.PositionSource) {
-		case GROUNDPATHFOLLOWERSETTINGS_POSITIONSOURCE_EKF:
-			northPos = positionActual.North;
-			eastPos = positionActual.East;
-			break;
-		case GROUNDPATHFOLLOWERSETTINGS_POSITIONSOURCE_GPSPOS:
-		{
-			NEDPositionData nedPosition;
-			NEDPositionGet(&nedPosition);
-			northPos = nedPosition.North;
-			eastPos = nedPosition.East;
-		}
-			break;
-		default:
-			PIOS_Assert(0);
-			break;
-	}
+	float northPos = positionActual.North;
+	float eastPos = positionActual.East;
 
 	// Compute desired north command velocity from position error
 	northError = pathDesired.End[PATHDESIRED_END_NORTH] - northPos;
@@ -408,34 +381,8 @@ static void updateGroundDesiredAttitude()
 	StabilizationSettingsGet(&stabSettings);
 	NedAccelGet(&nedAccel);
 
-	float northVel = 0;
-	float eastVel = 0;
-
-	switch (guidanceSettings.VelocitySource) {
-		case GROUNDPATHFOLLOWERSETTINGS_VELOCITYSOURCE_EKF:
-			northVel = velocityActual.North;
-			eastVel = velocityActual.East;
-			break;
-		case GROUNDPATHFOLLOWERSETTINGS_VELOCITYSOURCE_NEDVEL:
-		{
-			GPSVelocityData gpsVelocity;
-			GPSVelocityGet(&gpsVelocity);
-			northVel = gpsVelocity.North;
-			eastVel = gpsVelocity.East;
-		}
-			break;
-		case GROUNDPATHFOLLOWERSETTINGS_VELOCITYSOURCE_GPSPOS:
-		{
-			GPSPositionData gpsPosition;
-			GPSPositionGet(&gpsPosition);
-			northVel = gpsPosition.Groundspeed * cosf(gpsPosition.Heading * DEG2RAD);
-			eastVel = gpsPosition.Groundspeed * sinf(gpsPosition.Heading * DEG2RAD);
-		}
-			break;
-		default:
-			PIOS_Assert(0);
-			break;
-	}
+	float northVel = velocityActual.North;
+	float eastVel = velocityActual.East;
 
 	// Calculate direction from velocityDesired and set stabDesired.Yaw
 	stabDesired.Yaw = atan2f( velocityDesired.East, velocityDesired.North ) * RAD2DEG;

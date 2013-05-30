@@ -3,7 +3,8 @@
  *
  * @file       simulator.cpp
  * @author     The OpenPilot Team, http://www.openpilot.org Copyright (C) 2010.
- * @author     Tau Labs, http://www.taulabs.org, Copyright (C) 2013
+ * @author     Tau Labs, http://taulabs.org, Copyright (C) 2013
+ *
  * @addtogroup GCSPlugins GCS Plugins
  * @{
  * @addtogroup HITLPlugin HITL Plugin
@@ -250,8 +251,8 @@ void Simulator::setupUAVObjects()
 
     // Iterate over list of UAVObjects, setting all dynamic data metadata objects to slow update rate.
     UAVObjectManager *objManager = getObjectManager();
-    QList< QList<UAVDataObject*> > objList = objManager->getDataObjects();
-    foreach (QList<UAVDataObject*> list, objList) {
+    QVector< QVector<UAVDataObject*> > objList = objManager->getDataObjects();
+    foreach (QVector<UAVDataObject*> list, objList) {
         foreach (UAVDataObject* obj, list) {
             if(!obj->isSettings()) {
                 UAVObject::Metadata mdata = obj->getMetadata();

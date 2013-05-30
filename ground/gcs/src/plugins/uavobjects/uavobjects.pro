@@ -75,10 +75,12 @@ HEADERS += $$UAVOBJECT_SYNTHETICS/accels.h \
     $$UAVOBJECT_SYNTHETICS/hwquanton.h \
     $$UAVOBJECT_SYNTHETICS/hwrevolution.h \
     $$UAVOBJECT_SYNTHETICS/hwrevomini.h \
+    $$UAVOBJECT_SYNTHETICS/hwsparky.h \
     $$UAVOBJECT_SYNTHETICS/i2cstats.h \
     $$UAVOBJECT_SYNTHETICS/i2cvm.h \
     $$UAVOBJECT_SYNTHETICS/i2cvmuserprogram.h \
     $$UAVOBJECT_SYNTHETICS/inssettings.h \
+    $$UAVOBJECT_SYNTHETICS/insstate.h \
     $$UAVOBJECT_SYNTHETICS/magbias.h \
     $$UAVOBJECT_SYNTHETICS/magnetometer.h \
     $$UAVOBJECT_SYNTHETICS/manualcontrolsettings.h \
@@ -102,14 +104,15 @@ HEADERS += $$UAVOBJECT_SYNTHETICS/accels.h \
     $$UAVOBJECT_SYNTHETICS/receiveractivity.h \
     $$UAVOBJECT_SYNTHETICS/relaytuning.h \
     $$UAVOBJECT_SYNTHETICS/relaytuningsettings.h \
-    $$UAVOBJECT_SYNTHETICS/revosettings.h \
     $$UAVOBJECT_SYNTHETICS/sensorsettings.h \
     $$UAVOBJECT_SYNTHETICS/sonaraltitude.h \
     $$UAVOBJECT_SYNTHETICS/stabilizationdesired.h \
     $$UAVOBJECT_SYNTHETICS/stabilizationsettings.h \
+    $$UAVOBJECT_SYNTHETICS/stateestimation.h \
     $$UAVOBJECT_SYNTHETICS/systemstats.h \
     $$UAVOBJECT_SYNTHETICS/systemalarms.h \
     $$UAVOBJECT_SYNTHETICS/systemsettings.h \
+    $$UAVOBJECT_SYNTHETICS/tabletinfo.h \
     $$UAVOBJECT_SYNTHETICS/taskinfo.h \
     $$UAVOBJECT_SYNTHETICS/txpidsettings.h \
     $$UAVOBJECT_SYNTHETICS/velocitydesired.h \
@@ -172,10 +175,12 @@ SOURCES += $$UAVOBJECT_SYNTHETICS/accels.cpp \
     $$UAVOBJECT_SYNTHETICS/hwquanton.cpp \
     $$UAVOBJECT_SYNTHETICS/hwrevolution.cpp \
     $$UAVOBJECT_SYNTHETICS/hwrevomini.cpp \
+    $$UAVOBJECT_SYNTHETICS/hwsparky.cpp \
     $$UAVOBJECT_SYNTHETICS/i2cstats.cpp \
     $$UAVOBJECT_SYNTHETICS/i2cvm.cpp \
     $$UAVOBJECT_SYNTHETICS/i2cvmuserprogram.cpp \
     $$UAVOBJECT_SYNTHETICS/inssettings.cpp \
+    $$UAVOBJECT_SYNTHETICS/insstate.cpp \
     $$UAVOBJECT_SYNTHETICS/magbias.cpp \
     $$UAVOBJECT_SYNTHETICS/magnetometer.cpp \
     $$UAVOBJECT_SYNTHETICS/manualcontrolsettings.cpp \
@@ -199,14 +204,15 @@ SOURCES += $$UAVOBJECT_SYNTHETICS/accels.cpp \
     $$UAVOBJECT_SYNTHETICS/receiveractivity.cpp \
     $$UAVOBJECT_SYNTHETICS/relaytuning.cpp \
     $$UAVOBJECT_SYNTHETICS/relaytuningsettings.cpp \
-    $$UAVOBJECT_SYNTHETICS/revosettings.cpp \
     $$UAVOBJECT_SYNTHETICS/sensorsettings.cpp \
     $$UAVOBJECT_SYNTHETICS/sonaraltitude.cpp \
     $$UAVOBJECT_SYNTHETICS/stabilizationdesired.cpp \
     $$UAVOBJECT_SYNTHETICS/stabilizationsettings.cpp \
+    $$UAVOBJECT_SYNTHETICS/stateestimation.cpp \
     $$UAVOBJECT_SYNTHETICS/systemalarms.cpp \
     $$UAVOBJECT_SYNTHETICS/systemsettings.cpp \
     $$UAVOBJECT_SYNTHETICS/systemstats.cpp \
+    $$UAVOBJECT_SYNTHETICS/tabletinfo.cpp \
     $$UAVOBJECT_SYNTHETICS/taskinfo.cpp \
     $$UAVOBJECT_SYNTHETICS/txpidsettings.cpp \
     $$UAVOBJECT_SYNTHETICS/uavobjectsinit.cpp \

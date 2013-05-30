@@ -163,6 +163,13 @@ plugin_waypointeditor.depends = plugin_coreplugin
 plugin_waypointeditor.depends += plugin_uavobjects
 SUBDIRS += plugin_waypointeditor
 
+
+# Telemetry Scheduler gadget
+plugin_telemetryscheduler.subdir = telemetryscheduler
+plugin_telemetryscheduler.depends = plugin_coreplugin
+plugin_telemetryscheduler.depends += plugin_uavobjects
+SUBDIRS += plugin_telemetryscheduler
+
 # Primary Flight Display (PFD) gadget, QML version
 !LIGHTWEIGHT_GCS {
 plugin_pfdqml.subdir = pfdqml
@@ -282,6 +289,11 @@ SUBDIRS += plugin_uavobjectwidgetutils
 # Those plugins define supported board models: each board manufacturer
 # needs to implement a manufacturer plugin that defines all their boards
 ############################
+
+# Tau Labs project
+plugin_boards_taulabs.subdir = boards_taulabs
+plugin_boards_taulabs.depends = plugin_coreplugin
+SUBDIRS += plugin_boards_taulabs
 
 # OpenPilot project
 plugin_boards_openpilot.subdir = boards_openpilot

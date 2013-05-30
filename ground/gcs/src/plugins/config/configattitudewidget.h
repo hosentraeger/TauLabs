@@ -3,7 +3,7 @@
  *
  * @file       configattitudetwidget.h
  * @author     The OpenPilot Team, http://www.openpilot.org Copyright (C) 2010.
- * @author     Tau Labs, http://github.com/TauLabs, Copyright (C) 2012-2013.
+ * @author     Tau Labs, http://taulabs.org, Copyright (C) 2012-2013
  * @addtogroup GCSPlugins GCS Plugins
  * @{
  * @addtogroup ConfigPlugin Config Plugin
@@ -104,6 +104,9 @@ private:
 
     QMap<QString, UAVObject::Metadata> originalMetaData;
 
+    bool board_has_accelerometer;
+    bool board_has_magnetometer;
+
 private slots:
     //! Overriden method from the configTaskWidget to update UI
     virtual void refreshWidgetsValues(UAVObject * obj=NULL);
@@ -115,6 +118,7 @@ private slots:
     void doStartNoiseMeasurement();
     void doGetNoiseSample(UAVObject *);
     void do_SetDirty();
+    void configureSixPoint();
 
 };
 

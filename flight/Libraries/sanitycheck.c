@@ -1,12 +1,9 @@
 /**
  ******************************************************************************
- * @addtogroup OpenPilot System OpenPilot System
- * @{
- * @addtogroup OpenPilot Libraries OpenPilot System Libraries
+ * @addtogroup TauLabsLibraries Tau Labs Libraries
  * @{
  * @file       sanitycheck.c
- * @author     PhoenixPilot, http://github.com/PhoenixPilot Copyright (C) 2012-2013.
- * @author     The OpenPilot Team, http://www.openpilot.org Copyright (C) 2012.
+ * @author     Tau Labs, http://taulabs.org, Copyright (C) 2012-2013
  * @brief      Utilities to validate a flight configuration
  * @see        The GNU Public License (GPL) Version 3
  *
@@ -134,16 +131,18 @@ int32_t configuration_check()
 				}
 				break;
 			case MANUALCONTROLSETTINGS_FLIGHTMODEPOSITION_POSITIONHOLD:
+			case MANUALCONTROLSETTINGS_FLIGHTMODEPOSITION_RETURNTOHOME:
 				if (coptercontrol) {
-					error_code = SYSTEMALARMS_CONFIGERROR_POSITIONHOLD;
+					error_code = SYSTEMALARMS_CONFIGERROR_PATHPLANNER;
 				}
 				else {
 					if (!TaskMonitorQueryRunning(TASKINFO_RUNNING_PATHFOLLOWER)) {
-						error_code = SYSTEMALARMS_CONFIGERROR_POSITIONHOLD;
+						error_code = SYSTEMALARMS_CONFIGERROR_PATHPLANNER;
 					}
 				}
 				break;
 			case MANUALCONTROLSETTINGS_FLIGHTMODEPOSITION_PATHPLANNER:
+			case MANUALCONTROLSETTINGS_FLIGHTMODEPOSITION_TABLETCONTROL:
 				if (coptercontrol) {
 					error_code = SYSTEMALARMS_CONFIGERROR_PATHPLANNER;
 				}
@@ -256,3 +255,7 @@ static void set_config_error(SystemAlarmsConfigErrorOptions error_code)
 	// AlarmSet checks only updates on toggle
 	AlarmsSet(SYSTEMALARMS_ALARM_SYSTEMCONFIGURATION, (uint8_t) severity);
 }
+
+/**
+ * @}
+ */

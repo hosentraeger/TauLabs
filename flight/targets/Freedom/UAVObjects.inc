@@ -1,7 +1,7 @@
 #####
-# Project: OpenPilot
+# Project: Tau Labs
 #
-# Makefile for OpenPilot UAVObject code
+# Makefile for Tau Labs UAVObject code
 #
 # The OpenPilot Team, http://www.openpilot.org, Copyright (C) 2012.
 # 
@@ -36,6 +36,7 @@ UAVOBJSRCFILENAMES += attitudeactual
 UAVOBJSRCFILENAMES += gyros
 UAVOBJSRCFILENAMES += gyrosbias
 UAVOBJSRCFILENAMES += sensorsettings
+UAVOBJSRCFILENAMES += insstate
 UAVOBJSRCFILENAMES += accels
 UAVOBJSRCFILENAMES += magnetometer
 UAVOBJSRCFILENAMES += magbias
@@ -81,13 +82,14 @@ UAVOBJSRCFILENAMES += positionactual
 UAVOBJSRCFILENAMES += ratedesired
 UAVOBJSRCFILENAMES += relaytuning
 UAVOBJSRCFILENAMES += relaytuningsettings
-UAVOBJSRCFILENAMES += revosettings
 UAVOBJSRCFILENAMES += sonaraltitude
 UAVOBJSRCFILENAMES += stabilizationdesired
 UAVOBJSRCFILENAMES += stabilizationsettings
+UAVOBJSRCFILENAMES += stateestimation
 UAVOBJSRCFILENAMES += systemalarms
 UAVOBJSRCFILENAMES += systemsettings
 UAVOBJSRCFILENAMES += systemstats
+UAVOBJSRCFILENAMES += tabletinfo
 UAVOBJSRCFILENAMES += taskinfo
 UAVOBJSRCFILENAMES += velocityactual
 UAVOBJSRCFILENAMES += velocitydesired

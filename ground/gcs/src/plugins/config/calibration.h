@@ -2,7 +2,7 @@
  ******************************************************************************
  *
  * @file       calibration.h
- * @author     Tau Labs, http://github.com/TauLabs, Copyright (C) 2012-2013.
+ * @author     Tau Labs, http://taulabs.org, Copyright (C) 2012-2013
  * @brief      Gui-less support class for calibration
  *****************************************************************************/
 /*
@@ -50,7 +50,7 @@ public:
     explicit Calibration();
     ~Calibration();
 
-    void initialize(bool calibrateMags);
+    void initialize(bool calibrateAccels, bool calibrateMags);
 
 private:
     enum CALIBRATION_STATE {
@@ -143,8 +143,11 @@ private:
 
     QTimer timer;
 
-    //! Whether to attempt to calibrate the mag (normally if it is present)
-    bool calibrateMag;
+    //! Whether to attempt to calibrate the magnetometer (normally if it is present)
+    bool calibrateMags;
+
+    //! Whether to attempt to calibrate the accelerometer (normally if it is present)
+    bool calibrateAccels;
 
     //! The expected gravity amplitude
     double accelLength;

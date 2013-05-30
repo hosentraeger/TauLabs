@@ -1,13 +1,16 @@
 /**
  ******************************************************************************
+ * @addtogroup TauLabsTargets Tau Labs Targets
+ * @{
+ * @addtogroup RevoMini OpenPilot RevoMini support files
+ * @{
+ *
  * @file       pios_board.c
  * @author     The OpenPilot Team, http://www.openpilot.org Copyright (C) 2011.
- * @author     Tau Labs, http://www.taulabs.org, Copyright (C) 2012-2013
- * @addtogroup OpenPilotSystem OpenPilot System
- * @{
- * @addtogroup OpenPilotCore OpenPilot Core
- * @{
- * @brief Defines board specific static initializers for hardware for the revomini board.
+ * @author     Tau Labs, http://taulabs.org, Copyright (C) 2012-2013
+ * @brief      The board specific initialization routines
+ * @see        The GNU Public License (GPL) Version 3
+ * 
  *****************************************************************************/
 /* 
  * This program is free software; you can redistribute it and/or modify 
@@ -44,55 +47,6 @@
 /**
  * Sensor configurations 
  */
-
-#if defined(PIOS_INCLUDE_ADC)
-#include "pios_adc_priv.h"
-void PIOS_ADC_DMC_irq_handler(void);
-void DMA2_Stream4_IRQHandler(void) __attribute__((alias("PIOS_ADC_DMC_irq_handler")));
-struct pios_adc_cfg pios_adc_cfg = {
-	.adc_dev = ADC1,
-	.dma = {
-		.irq = {
-			.flags   = (DMA_FLAG_TCIF4 | DMA_FLAG_TEIF4 | DMA_FLAG_HTIF4),
-			.init    = {
-				.NVIC_IRQChannel                   = DMA2_Stream4_IRQn,
-				.NVIC_IRQChannelPreemptionPriority = PIOS_IRQ_PRIO_LOW,
-				.NVIC_IRQChannelSubPriority        = 0,
-				.NVIC_IRQChannelCmd                = ENABLE,
-			},
-		},
-		.rx = {
-			.channel = DMA2_Stream4,
-			.init    = {
-				.DMA_Channel                    = DMA_Channel_0,
-				.DMA_PeripheralBaseAddr = (uint32_t) & ADC1->DR
-			},
-		}
-	},
-	.half_flag = DMA_IT_HTIF4,
-	.full_flag = DMA_IT_TCIF4,
-
-};
-
-struct stm32_gpio pios_current_sonar_pin ={
-    .gpio = GPIOA,
-			.init = {
-				.GPIO_Pin = GPIO_Pin_8,
-				.GPIO_Speed = GPIO_Speed_2MHz,
-				.GPIO_Mode  = GPIO_Mode_IN,
-				.GPIO_OType = GPIO_OType_OD,
-				.GPIO_PuPd  = GPIO_PuPd_NOPULL
-			},
-			.pin_source = GPIO_PinSource8,
-};
-
-void PIOS_ADC_DMC_irq_handler(void)
-{
-	/* Call into the generic code to handle the IRQ for this specific device */
-	PIOS_ADC_DMA_Handler();
-}
-
-#endif
 
 #if defined(PIOS_INCLUDE_HMC5883)
 #include "pios_hmc5883.h"
@@ -222,15 +176,16 @@ uint32_t pios_rcvr_group_map[MANUALCONTROLSETTINGS_CHANNELGROUPS_NONE];
 uintptr_t pios_com_debug_id;
 #endif	/* PIOS_INCLUDE_DEBUG_CONSOLE */
 
-uintptr_t pios_com_gps_id = 0;
-uintptr_t pios_com_telem_usb_id = 0;
-uintptr_t pios_com_telem_rf_id = 0;
-uintptr_t pios_com_vcp_id = 0;
-uintptr_t pios_com_bridge_id = 0;
-uintptr_t pios_com_overo_id = 0;
-uint32_t pios_rfm22b_id = 0;
-
+uintptr_t pios_com_gps_id;
+uintptr_t pios_com_telem_usb_id;
+uintptr_t pios_com_telem_rf_id;
+uintptr_t pios_com_vcp_id;
+uintptr_t pios_com_bridge_id;
+uintptr_t pios_com_overo_id;
+uint32_t pios_rfm22b_id;
+uintptr_t pios_internal_adc_id = 0;
 uintptr_t pios_uavo_settings_fs_id;
+uintptr_t pios_waypoints_settings_fs_id;
 
 /*
  * Setup a com port based on the passed cfg, driver and buffer sizes. rx or tx size of 0 disables rx or tx
@@ -325,7 +280,8 @@ void PIOS_Board_Init(void) {
 	/* Connect flash to the appropriate interface and configure it */
 	uintptr_t flash_id;
 	PIOS_Flash_Jedec_Init(&flash_id, pios_spi_telem_flash_id, 1, &flash_m25p_cfg);
-	PIOS_FLASHFS_Logfs_Init(&pios_uavo_settings_fs_id, &flashfs_m25p_cfg, &pios_jedec_flash_driver, flash_id);
+	PIOS_FLASHFS_Logfs_Init(&pios_uavo_settings_fs_id, &flashfs_m25p_settings_cfg, &pios_jedec_flash_driver, flash_id);
+	PIOS_FLASHFS_Logfs_Init(&pios_waypoints_settings_fs_id, &flashfs_m25p_waypoints_cfg, &pios_jedec_flash_driver, flash_id);
 #endif
 
 	/* Initialize UAVObject libraries */
@@ -762,7 +718,10 @@ void PIOS_Board_Init(void) {
 	PIOS_SENSORS_Init();
 
 #if defined(PIOS_INCLUDE_ADC)
-	PIOS_ADC_Init(&pios_adc_cfg);
+	uint32_t internal_adc_id;
+	PIOS_INTERNAL_ADC_Init(&internal_adc_id, &pios_adc_cfg);
+	PIOS_ADC_Init(&pios_internal_adc_id, &pios_internal_adc_driver, internal_adc_id);
+ 
         // configure the pullup for PA8 (inhibit pullups from current/sonar shared pin)
         GPIO_Init(pios_current_sonar_pin.gpio, &pios_current_sonar_pin.init);
 #endif

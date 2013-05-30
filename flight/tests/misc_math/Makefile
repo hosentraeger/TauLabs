@@ -1,6 +1,6 @@
 ###############################################################################
 # @file       Makefile
-# @author     Tau Labs, http://github.com/TauLabs, Copyright (C) 2013
+# @author     Tau Labs, http://taulabs.org, Copyright (C) 2013
 # @addtogroup 
 # @{
 # @addtogroup 
@@ -27,6 +27,7 @@ WHEREAMI := $(dir $(lastword $(MAKEFILE_LIST)))
 TOP      := $(realpath $(WHEREAMI)/../../../)
 include $(TOP)/make/firmware-defs.mk
 
+EXTRAINCDIRS += $(SHAREDAPIDIR)
 EXTRAINCDIRS += $(FLIGHTLIB)/math
 
 CFLAGS += -O0

@@ -1,13 +1,16 @@
 /**
  ******************************************************************************
- * @file       board_hw_defs.c
- * @author     The OpenPilot Team, http://www.openpilot.org Copyright (C) 2012.
- * @author     PhoenixPilot, http://github.com/PhoenixPilot, Copyright (C) 2012
- * @addtogroup OpenPilotSystem OpenPilot System
+ * @addtogroup TauLabsTargets Tau Labs Targets
  * @{
- * @addtogroup OpenPilotCore OpenPilot Core
+ * @addtogroup FlyingF3 FlyingF3 support files
  * @{
- * @brief Defines board specific static initializers for hardware for the flying f3 board.
+ *
+ * @file       board_hw_defs.c 
+ * @author     Tau Labs, http://taulabs.org, Copyright (C) 2012-2013
+ * @brief      Defines board specific static initializers for hardware for the
+ *             flying f3 board.
+ * @see        The GNU Public License (GPL) Version 3
+ * 
  *****************************************************************************/
 /*
  * This program is free software; you can redistribute it and/or modify
@@ -514,15 +517,27 @@ void PIOS_I2C_external_er_irq_handler(void)
 static const struct pios_flash_internal_cfg flash_internal_cfg = {
 };
 
-static const struct flashfs_logfs_cfg flashfs_internal_cfg = {
-	.fs_magic      = 0x9ae4ee11,
-	.total_fs_size = EE_BANK_SIZE, /* 4K bytes (2x2KB sectors) */
-	.arena_size    = 0x00004000, /* 64 * slot size = 16K bytes = 8 sectors */
-	.slot_size     = 0x00000100, /* 256 bytes */
+static const struct flashfs_logfs_cfg flashfs_internal_settings_cfg = {
+	.fs_magic      = 0x9ae1ee11,
+	.total_fs_size = EE_BANK_SIZE / 2, /* 16K bytes (8x2KB sectors) */
+	.arena_size    = 0x00002000,       /* 32 * slot size = 8K bytes = 4 sectors */
+	.slot_size     = 0x00000100,       /* 256 bytes */
 
 	.start_offset  = EE_BANK_BASE, /* start after the bootloader */
-	.sector_size   = 0x00000800, /* 2K bytes */
-	.page_size     = 0x00000800, /* 2K bytes */
+	.sector_size   = 0x00000800,   /* 2K bytes */
+	.page_size     = 0x00000800,   /* 2K bytes */
+};
+
+static const struct flashfs_logfs_cfg flashfs_internal_waypoints_cfg = {
+	.fs_magic      = 0x9ab4ee11,
+	.total_fs_size = EE_BANK_SIZE / 2, /* 16K bytes (8x2KB sectors) */
+	.arena_size    = 0x00002000,       /* 32 * slot size = 8K bytes = 4 sectors */
+	.slot_size     = 0x00000100,       /* 256 bytes */
+
+	/* start after the settings */
+	.start_offset  = EE_BANK_BASE + EE_BANK_SIZE / 2, 
+	.sector_size   = 0x00000800,   /* 2K bytes */
+	.page_size     = 0x00000800,   /* 2K bytes */
 };
 
 #include "pios_flash.h"
@@ -2153,3 +2168,44 @@ const struct pios_usb_cdc_cfg pios_usb_cdc_cfg = {
 	.data_tx_ep = 3,
 };
 #endif	/* PIOS_INCLUDE_USB_CDC */
+
+/*
+ * ADC system
+ */
+#if defined(PIOS_INCLUDE_ADC)
+#include "pios_internal_adc_priv.h"
+#include "pios_adc_priv.h"
+#include "pios_dma.h"
+
+static const struct pios_internal_adc_cfg internal_adc_cfg_rcflyer_shield = {
+	.dma = {
+		.irq = {
+			.flags   = (DMA_IT_TC | DMA_IT_HT | DMA_IT_TE),
+			.init    = {
+			.NVIC_IRQChannel                   = DMA1_Channel1_IRQn,
+			.NVIC_IRQChannelPreemptionPriority = PIOS_IRQ_PRIO_HIGH,
+			.NVIC_IRQChannelSubPriority        = 0,
+			.NVIC_IRQChannelCmd                = ENABLE,
+			},
+		},
+		.rx = {
+			.channel = DMA1_Channel1,
+			.init    = {
+			.DMA_Priority           = DMA_Priority_High,
+			},
+		}
+	},
+	.half_flag = DMA1_IT_HT1,
+	.full_flag = DMA1_IT_TC1,
+	.oversampling = 32,
+	.adc_dev_master = ADC1,
+	.adc_dev_slave = ADC2,
+	.number_of_used_pins = 2,
+	.adc_pins = (struct adc_pin[]){{GPIOC,GPIO_Pin_3,ADC_Channel_9,true},{GPIOC,GPIO_Pin_4,ADC_Channel_5,false},},
+};
+#endif //PIOS_INCLUDE_ADC
+
+/**
+ * @}
+ * @}
+ */

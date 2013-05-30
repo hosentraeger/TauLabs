@@ -2,7 +2,7 @@
  ******************************************************************************
  *
  * @file       iboardtype.h
- * @author     Tau Labs, http://github.com/TauLabs, Copyright (C) 2012-2013.
+ * @author     Tau Labs, http://taulabs.org, Copyright (C) 2012-2013
  *             Parts by Nokia Corporation (qt-info@nokia.com) Copyright (C) 2009.
  * @addtogroup GCSPlugins GCS Plugins
  * @{
@@ -102,7 +102,7 @@ public:
      *  TODO: this API is not stable yet.
      *
      */
-    virtual QPixmap* getBoardPicture() = 0;
+    virtual QPixmap getBoardPicture() = 0;
 
     /**
      * Get supported protocol(s) for this board
@@ -110,6 +110,13 @@ public:
      * TODO: extend GCS to support multiple protocol types.
      */
     virtual QStringList getSupportedProtocols() = 0;
+
+    /**
+     * Get supported protocol(s) for this board
+     *
+     * TODO: extend GCS to support multiple protocol types.
+     */
+    virtual QString getHwUAVO() = 0;
 
     /**
      * Get USB descriptors to detect the board

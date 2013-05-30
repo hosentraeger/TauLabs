@@ -2,7 +2,7 @@
 ******************************************************************************
 *
 * @file       waypointcurvele.cpp
-* @author     Tau Labs, http://github.com/TauLabs, Copyright (C) 2012-2013.
+* @author     Tau Labs, http://taulabs.org, Copyright (C) 2012-2013
 * @brief      A graphicsItem representing a curve connecting 2 waypoints
 * @see        The GNU Public License (GPL) Version 3
 * @defgroup   OPMapWidget
@@ -139,11 +139,9 @@ void WayPointCurve::refreshLocations()
     double endAngle = atan2(-(m_dest->pos().y() - center_y), m_dest->pos().x() - center_x);
     double span = endAngle - startAngle;
     if (!m_clockwise) {
-        qDebug() << startAngle << " " << endAngle << " " << span;
         if (span > 0)
             span = span - 2 * M_PI;
     } else {
-        qDebug() << startAngle << " " << endAngle << " " << span;
         if (span < 0)
             span = span + 2 * M_PI;
     }
