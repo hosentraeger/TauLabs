@@ -32,7 +32,7 @@
 class TauLabsPlugin : public ExtensionSystem::IPlugin
 {
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID "TauLabs.plugins.Config." FILE "TauLabs.json")
+    Q_PLUGIN_METADATA(IID "TauLabs.plugins.TauLabs" FILE "TauLabs.json")
 
 public:
    TauLabsPlugin();
