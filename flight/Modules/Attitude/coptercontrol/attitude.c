@@ -329,7 +329,7 @@ static int32_t updateSensors(AccelsData * accelsData, GyrosData * gyrosData)
 	gyros.temperature = gyro[0];
 	gyros.x = -(gyro[1] - GYRO_NEUTRAL) * IDG_GYRO_GAIN;
 	gyros.y = (gyro[2] - GYRO_NEUTRAL) * IDG_GYRO_GAIN;
-	gyros.z = -(gyro[3] - GYRO_NEUTRAL) * IDG_GYRO_GAIN;
+	gyros.z = (gyro[3] - GYRO_NEUTRAL) * IDG_GYRO_GAIN;
 	
 	// Convert the ADXL345 data into the standard normalized format
 	int32_t x = 0;
