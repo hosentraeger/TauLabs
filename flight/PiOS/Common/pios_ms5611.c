@@ -151,6 +151,11 @@ int32_t PIOS_MS5611_Init(const struct pios_ms5611_cfg *cfg, int32_t i2c_device)
 		PIOS_MS5611_Read(MS5611_CALIB_ADDR + i * 2, data, 2);
 		dev->calibration[i] = (data[0] << 8) | data[1];
 	}
+	/* on some devices the first few bytes aren't transferred correctly, so just transfer again */
+	for (int i = 0; i < NELEMENTS(dev->calibration); i++) {
+		PIOS_MS5611_Read(MS5611_CALIB_ADDR + i * 2, data, 2);
+		dev->calibration[i] = (data[0] << 8) | data[1];
+	};
 
 	portBASE_TYPE result = xTaskCreate(PIOS_MS5611_Task, (const signed char *)"pios_ms5611",
 						 MS5611_TASK_STACK, NULL, MS5611_TASK_PRIORITY,
