@@ -239,6 +239,7 @@ static void PIOS_Board_configure_dsm(const struct pios_usart_cfg *pios_usart_dsm
  * 2 pulses - LSM303
  * 3 pulses - internal I2C bus locked
  * 4 pulses - external I2C bus locked
+ * 5 pulses - MS5611
  */
 void panic(int32_t code) {
 	while(1){
@@ -302,7 +303,6 @@ void PIOS_Board_Init(void) {
 	if (PIOS_I2C_CheckClear(pios_i2c_external_id) != 0)
 		panic(4);
 #endif
-
 #if defined(PIOS_INCLUDE_FLASH)
 	/* Connect flash to the appropriate interface and configure it */
 	uintptr_t flash_id;
@@ -1094,6 +1094,12 @@ void PIOS_Board_Init(void) {
 	PIOS_DELAY_WaitmS(50);
 	PIOS_WDG_Clear();
 #endif /* PIOS_INCLUDE_LSM303 && PIOS_INCLUDE_I2C*/
+
+#if defined(PIOS_INCLUDE_MS5611)
+	PIOS_MS5611_Init(&pios_ms5611_cfg, pios_i2c_external_id);
+	if (PIOS_MS5611_Test() != 0)
+		panic(5);
+#endif
 
 #if defined(PIOS_INCLUDE_GPIO)
 	PIOS_GPIO_Init();
