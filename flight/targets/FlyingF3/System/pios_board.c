@@ -1096,8 +1096,8 @@ void PIOS_Board_Init(void) {
 #endif /* PIOS_INCLUDE_LSM303 && PIOS_INCLUDE_I2C*/
 
 #if defined(PIOS_INCLUDE_MS5611)
-	PIOS_MS5611_Init(&pios_ms5611_cfg, pios_i2c_external_id);
-	if (PIOS_MS5611_Test() != 0)
+	if ( ( PIOS_MS5611_Init(&pios_ms5611_cfg, pios_i2c_external_id) != 0 ) ||
+	(PIOS_MS5611_Test() != 0))
 		panic(5);
 #endif
 
