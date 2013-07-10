@@ -236,14 +236,17 @@ SRC += $(OPUAVSYNTHDIR)/fixedwingpathfollowersettingscc.c
 SRC += $(OPUAVSYNTHDIR)/pathstatus.c
 SRC += $(OPUAVSYNTHDIR)/pathdesired.c
 SRC += $(OPUAVSYNTHDIR)/homelocation.c
+SRC += $(OPUAVSYNTHDIR)/poilocation.c
 SRC += $(OPUAVSYNTHDIR)/positionactual.c
+SRC += $(OPUAVSYNTHDIR)/tabletinfo.c
 SRC += $(OPUAVSYNTHDIR)/velocityactual.c
 SRC += $(OPUAVSYNTHDIR)/airspeedactual.c
 SRC += $(OPUAVSYNTHDIR)/sensorsettings.c
 SRC += $(OPUAVSYNTHDIR)/flightbatterystate.c
 SRC += $(OPUAVSYNTHDIR)/flightbatterysettings.c
 SRC += $(OPUAVSYNTHDIR)/adcrouting.c
-
+SRC += $(OPUAVSYNTHDIR)/trimanglessettings.c
+SRC += $(OPUAVSYNTHDIR)/trimangles.c
 endif
 
 ## PIOS Hardware (STM32F10x)
@@ -276,6 +279,7 @@ SRC += $(PIOSSTM32F10X)/pios_usb_rctx.c
 SRC += $(PIOSSTM32F10X)/pios_usb_cdc.c
 SRC += $(PIOSSTM32F10X)/pios_usb_hid_istr.c
 SRC += $(PIOSSTM32F10X)/pios_usb_hid_pwr.c
+SRC += $(PIOSSTM32F10X)/pios_flash_internal.c
 SRC += $(OPSYSTEM)/pios_usb_board_data.c
 SRC += $(PIOSCOMMON)/pios_usb_desc_hid_cdc.c
 SRC += $(PIOSCOMMON)/pios_usb_desc_hid_only.c
@@ -294,6 +298,7 @@ SRC += $(PIOSCOMMON)/pios_sensors.c
 SRC += $(PIOSCOMMON)/pios_gcsrcvr.c
 SRC += $(PIOSCOMMON)/printf-stdarg.c
 SRC += $(PIOSCOMMON)/pios_adc.c
+SRC += $(PIOSCOMMON)/pios_flash.c
 ifeq ($(USE_PCF8591), YES)
 SRC += $(PIOSCOMMON)/pios_pcf8591_adc.c
 endif
@@ -573,6 +578,7 @@ CFLAGS += -fomit-frame-pointer
 CFLAGS += -Wall
 CFLAGS += -Werror
 CFLAGS += -ffunction-sections -fdata-sections
+CFLAGS += -Wdouble-promotion
 CFLAGS += -Wa,-adhlns=$(addprefix $(OUTDIR)/, $(notdir $(addsuffix .lst, $(basename $<))))
 # Compiler flags to generate dependency files:
 CFLAGS += -MD -MP -MF $(OUTDIR)/dep/$(@F).d

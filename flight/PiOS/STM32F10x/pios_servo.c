@@ -42,7 +42,7 @@ static const struct pios_servo_cfg * servo_cfg;
 */
 int32_t PIOS_Servo_Init(const struct pios_servo_cfg * cfg)
 {
-	uint32_t tim_id;
+	uintptr_t tim_id;
 	if (PIOS_TIM_InitChannels(&tim_id, cfg->channels, cfg->num_channels, NULL, 0)) {
 		return -1;
 	}
@@ -96,7 +96,7 @@ void PIOS_Servo_SetHz(const uint16_t * speeds, uint8_t banks)
 	TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure = servo_cfg->tim_base_init;
 	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
 	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-	TIM_TimeBaseStructure.TIM_Prescaler = (PIOS_MASTER_CLOCK / 1000000) - 1;
+	TIM_TimeBaseStructure.TIM_Prescaler = (PIOS_SYSCLK / 1000000) - 1;
 
 	uint8_t set = 0;
 

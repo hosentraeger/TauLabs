@@ -64,8 +64,8 @@
 #define PIOS_INCLUDE_L3GD20
 #define PIOS_INCLUDE_MS5611
 //#define PIOS_INCLUDE_ETASV3
-//#define PIOS_INCLUDE_MPXV5004
-//#define PIOS_INCLUDE_MPXV7002
+#define PIOS_INCLUDE_MPXV5004
+#define PIOS_INCLUDE_MPXV7002
 //#define PIOS_INCLUDE_HCSR04
 #define PIOS_FLASH_ON_ACCEL /* true for second revo */
 #define FLASH_FREERTOS
@@ -92,6 +92,8 @@
 
 #define PIOS_INCLUDE_SETTINGS
 #define PIOS_INCLUDE_FLASH
+#define PIOS_INCLUDE_FLASH_JEDEC
+#define PIOS_INCLUDE_FLASH_INTERNAL
 #define PIOS_INCLUDE_LOGFS_SETTINGS
 
 /* Other Interfaces */
@@ -101,6 +103,8 @@
 #define PIOS_INCLUDE_INITCALL           /* Include init call structures */
 #define PIOS_TELEM_PRIORITY_QUEUE       /* Enable a priority queue in telemetry */
 //#define PIOS_QUATERNION_STABILIZATION   /* Stabilization options */
+
+#define CAMERASTAB_POI_MODE
 
 /* Alarm Thresholds */
 #define HEAP_LIMIT_WARNING		1000
@@ -124,6 +128,9 @@
 #define IDLE_COUNTS_PER_SEC_AT_NO_LOAD (6984538)
 
 #define REVOLUTION
+
+// Enable POI tracking mode for camera stabilization
+#define CAMERASTAB_POI_MODE
 
 #endif /* PIOS_CONFIG_H */
 /**

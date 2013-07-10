@@ -232,23 +232,80 @@ void PIOS_SPI_accel_irq_handler(void)
 
 #if defined(PIOS_INCLUDE_FLASH)
 #include "pios_flashfs_logfs_priv.h"
+
+static const struct flashfs_logfs_cfg flashfs_settings_cfg = {
+	.fs_magic      = 0x99abcfef,
+	.arena_size    = 0x00004000, /* 64 * slot size = 16K bytes = 1 sector */
+	.slot_size     = 0x00000100, /* 256 bytes */
+};
+
 #include "pios_flash_internal_priv.h"
 
 static const struct pios_flash_internal_cfg flash_internal_cfg = {
 };
 
-static const struct flashfs_logfs_cfg flashfs_internal_cfg = {
-	.fs_magic      = 0x99abcfef,
-	.total_fs_size = EE_BANK_SIZE, /* 32K bytes (2x16KB sectors) */
-	.arena_size    = 0x00004000, /* 64 * slot size = 16K bytes = 1 sector */
-	.slot_size     = 0x00000100, /* 256 bytes */
+#include "pios_flash_priv.h"
 
-	.start_offset  = EE_BANK_BASE, /* start after the bootloader */
-	.sector_size   = 0x00004000, /* 16K bytes */
-	.page_size     = 0x00004000, /* 16K bytes */
+static const struct pios_flash_sector_range stm32f4_sectors[] = {
+	{
+		.base_sector = 0,
+		.last_sector = 3,
+		.sector_size = FLASH_SECTOR_16KB,
+	},
+	{
+		.base_sector = 4,
+		.last_sector = 4,
+		.sector_size = FLASH_SECTOR_64KB,
+	},
+	{
+		.base_sector = 5,
+		.last_sector = 11,
+		.sector_size = FLASH_SECTOR_128KB,
+	},
+
 };
 
-#include "pios_flash.h"
+uintptr_t pios_internal_flash_id;
+static const struct pios_flash_chip pios_flash_chip_internal = {
+	.driver        = &pios_internal_flash_driver,
+	.chip_id       = &pios_internal_flash_id,
+	.page_size     = 16, /* 128-bit rows */
+	.sector_blocks = stm32f4_sectors,
+	.num_blocks    = NELEMENTS(stm32f4_sectors),
+};
+
+static const struct pios_flash_partition pios_flash_partition_table[] = {
+	{
+		.label        = FLASH_PARTITION_LABEL_BL,
+		.chip_desc    = &pios_flash_chip_internal,
+		.first_sector = 0,
+		.last_sector  = 1,
+		.chip_offset  = 0,
+		.size         = (1 - 0 + 1) * FLASH_SECTOR_16KB,
+	},
+
+	{
+		.label        = FLASH_PARTITION_LABEL_SETTINGS,
+		.chip_desc    = &pios_flash_chip_internal,
+		.first_sector = 2,
+		.last_sector  = 3,
+		.chip_offset  = (2 * FLASH_SECTOR_16KB),
+		.size         = (3 - 2 + 1) * FLASH_SECTOR_16KB,
+	},
+
+	/* NOTE: sector 4 of internal flash is currently unallocated */
+
+	{
+		.label        = FLASH_PARTITION_LABEL_FW,
+		.chip_desc    = &pios_flash_chip_internal,
+		.first_sector = 5,
+		.last_sector  = 6,
+		.chip_offset  = (4 * FLASH_SECTOR_16KB) + (1 * FLASH_SECTOR_64KB),
+		.size         = (6 - 5 + 1) * FLASH_SECTOR_128KB,
+	},
+
+	/* NOTE: sectors 7-11 of the internal flash are currently unallocated */
+};
 
 #endif	/* PIOS_INCLUDE_FLASH */
 
@@ -267,7 +324,7 @@ static const struct flashfs_logfs_cfg flashfs_internal_cfg = {
 
 static const struct pios_usart_cfg pios_usart3_cfg = {
 	.regs = USART3,
-	//.remap = GPIO_AF_USART3,
+	.remap = GPIO_AF_USART3,
 	.init = {
 		.USART_BaudRate = 57600,
 		.USART_WordLength = USART_WordLength_8b,

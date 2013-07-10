@@ -60,6 +60,9 @@
 #define PIOS_INCLUDE_HMC5883
 #define PIOS_HMC5883_HAS_GPIOS
 #define PIOS_INCLUDE_MPU6000
+//#define PIOS_INCLUDE_ETASV3
+#define PIOS_INCLUDE_MPXV5004
+#define PIOS_INCLUDE_MPXV7002
 #define PIOS_MPU6000_ACCEL
 #define PIOS_MPU6000_SIMPLE_INIT_SEQUENCE
 #define PIOS_INCLUDE_MS5611
@@ -87,6 +90,8 @@
 #define PIOS_INCLUDE_SETTINGS
 #define PIOS_INCLUDE_FLASH
 #define PIOS_INCLUDE_LOGFS_SETTINGS
+#define PIOS_INCLUDE_FLASH_INTERNAL
+#define PIOS_INCLUDE_FLASH_JEDEC
 
 /* Other Interfaces */
 //#define PIOS_INCLUDE_I2C_ESC
@@ -96,6 +101,8 @@
 #define PIOS_TELEM_PRIORITY_QUEUE       /* Enable a priority queue in telemetry */
 //#define PIOS_QUATERNION_STABILIZATION   /* Stabilization options */
 #define PIOS_GPS_SETS_HOMELOCATION      /* GPS options */
+
+#define CAMERASTAB_POI_MODE
 
 /* Alarm Thresholds */
 #define HEAP_LIMIT_WARNING		1000

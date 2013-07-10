@@ -67,6 +67,8 @@
 #define PIOS_MPU6000_ACCEL
 #define PIOS_INCLUDE_MS5611
 //#define PIOS_INCLUDE_ETASV3
+#define PIOS_INCLUDE_MPXV5004
+#define PIOS_INCLUDE_MPXV7002
 //#define PIOS_INCLUDE_HCSR04
 //#define FLASH_FREERTOS
 /* Com systems to include */
@@ -93,6 +95,8 @@
 #define PIOS_INCLUDE_SETTINGS
 #define PIOS_INCLUDE_FLASH
 #define PIOS_INCLUDE_LOGFS_SETTINGS
+#define PIOS_INCLUDE_FLASH_INTERNAL
+#define PIOS_INCLUDE_FLASH_JEDEC
 
 /* Other Interfaces */
 //#define PIOS_INCLUDE_I2C_ESC
@@ -103,6 +107,8 @@
 //#define PIOS_QUATERNION_STABILIZATION   /* Stabilization options */
 #define PIOS_GPS_SETS_HOMELOCATION      /* GPS options */
 
+#define CAMERASTAB_POI_MODE
+ 
 /* Alarm Thresholds */
 #define HEAP_LIMIT_WARNING		1000
 #define HEAP_LIMIT_CRITICAL		500

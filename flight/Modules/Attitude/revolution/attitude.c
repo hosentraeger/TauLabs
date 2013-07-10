@@ -606,7 +606,7 @@ static int32_t updateAttitudeComplementary(bool first_run, bool secondary)
 
 	// If quaternion has become inappropriately short or is nan reinit.
 	// THIS SHOULD NEVER ACTUALLY HAPPEN
-	if((fabs(qmag) < 1.0e-3f) || (qmag != qmag)) {
+	if((fabsf(qmag) < 1.0e-3f) || (qmag != qmag)) {
 		cf_q[0] = 1;
 		cf_q[1] = 0;
 		cf_q[2] = 0;
@@ -996,13 +996,15 @@ static int32_t updateAttitudeINSGPS(bool first_run, bool outdoor_mode)
 		gps_vel_updated = false;
 	}
 
-	// When runnning in indoor mode force the position to zero
-	if (!outdoor_mode) {
+	// Update fake position at 10 hz
+	static uint32_t indoor_pos_time;
+	if (!outdoor_mode && PIOS_DELAY_DiffuS(indoor_pos_time) > 100000) {
+		indoor_pos_time = PIOS_DELAY_GetRaw();
 		vel[0] = vel[1] = vel[2] = 0;
 		NED[0] = NED[1] = 0;
 		NED[2] = -(baroData.Altitude + baro_offset);
 		sensors |= HORIZ_SENSORS | HORIZ_POS_SENSORS;
-		sensors |= VERT_SENSORS | VERT_POS_SENSORS;
+		sensors |= VERT_SENSORS;
 	}
 
 	/*
@@ -1147,8 +1149,8 @@ static void settingsUpdatedCb(UAVObjEvent * ev)
 		AttitudeSettingsGet(&attitudeSettings);
 			
 		// Calculate accel filter alpha, in the same way as for gyro data in stabilization module.
-		const float fakeDt = 0.0025;
-		if(attitudeSettings.AccelTau < 0.0001) {
+		const float fakeDt = 0.0025f;
+		if(attitudeSettings.AccelTau < 0.0001f) {
 			complementary_filter_state.accel_alpha = 0;   // not trusting this to resolve to 0
 			complementary_filter_state.accel_filter_enabled = false;
 		} else {
