@@ -509,41 +509,157 @@ void PIOS_I2C_external_er_irq_handler(void)
 
 #endif /* PIOS_INCLUDE_I2C */
 
+#if defined(PIOS_INCLUDE_CAN)
+#include "pios_can_priv.h"
+struct pios_can_cfg pios_can_cfg = {
+	.regs = CAN1,
+	.init = {
+  		.CAN_Prescaler = 16,   /*!< Specifies the length of a time quantum. 
+                                 It ranges from 1 to 1024. */
+  		.CAN_Mode = CAN_Mode_Normal,         /*!< Specifies the CAN operating mode.
+                                 This parameter can be a value of @ref CAN_operating_mode */
+  		.CAN_SJW = CAN_SJW_1tq,          /*!< Specifies the maximum number of time quanta 
+                                 the CAN hardware is allowed to lengthen or 
+                                 shorten a bit to perform resynchronization.
+                                 This parameter can be a value of @ref CAN_synchronisation_jump_width */
+  		.CAN_BS1 = CAN_BS1_9tq,          /*!< Specifies the number of time quanta in Bit 
+                                 Segment 1. This parameter can be a value of 
+                                 @ref CAN_time_quantum_in_bit_segment_1 */
+  		.CAN_BS2 = CAN_BS2_8tq,          /*!< Specifies the number of time quanta in Bit Segment 2.
+                                 This parameter can be a value of @ref CAN_time_quantum_in_bit_segment_2 */
+  		.CAN_TTCM = DISABLE, /*!< Enable or disable the time triggered communication mode.
+                                This parameter can be set either to ENABLE or DISABLE. */
+  		.CAN_ABOM = DISABLE,  /*!< Enable or disable the automatic bus-off management.
+                                  This parameter can be set either to ENABLE or DISABLE. */
+  		.CAN_AWUM = DISABLE,  /*!< Enable or disable the automatic wake-up mode. 
+                                  This parameter can be set either to ENABLE or DISABLE. */
+  		.CAN_NART = ENABLE,  /*!< Enable or disable the non-automatic retransmission mode.
+                                  This parameter can be set either to ENABLE or DISABLE. */
+  		.CAN_RFLM  = DISABLE,  /*!< Enable or disable the Receive FIFO Locked mode.
+                                  This parameter can be set either to ENABLE or DISABLE. */
+  		.CAN_TXFP = DISABLE,  /*!< Enable or disable the transmit FIFO priority.
+                                  This parameter can be set either to ENABLE or DISABLE. */
+	},
+	.remap = GPIO_AF_7,
+	.tx = {
+		.gpio = GPIOD,
+		.init = {
+			.GPIO_Pin   = GPIO_Pin_1,
+			.GPIO_Speed = GPIO_Speed_50MHz,
+			.GPIO_Mode  = GPIO_Mode_AF,
+			.GPIO_OType = GPIO_OType_PP,
+			.GPIO_PuPd  = GPIO_PuPd_UP
+		},
+		.pin_source = GPIO_PinSource1,
+	},
+	.rx = {
+		.gpio = GPIOD,
+		.init = {
+			.GPIO_Pin   = GPIO_Pin_0,
+			.GPIO_Speed = GPIO_Speed_50MHz,
+			.GPIO_Mode  = GPIO_Mode_AF,
+			.GPIO_OType = GPIO_OType_PP,
+			.GPIO_PuPd  = GPIO_PuPd_UP
+		},
+		.pin_source = GPIO_PinSource0,
+	},
+	.rx_irq = {
+		.init = {
+			.NVIC_IRQChannel = CAN1_RX1_IRQn,
+			.NVIC_IRQChannelPreemptionPriority = PIOS_IRQ_PRIO_MID,
+			.NVIC_IRQChannelSubPriority = 0,
+			.NVIC_IRQChannelCmd = ENABLE,
+		},
+	},
+	.tx_irq = {
+		.init = {
+			.NVIC_IRQChannel = USB_HP_CAN1_TX_IRQn,
+			.NVIC_IRQChannelPreemptionPriority = PIOS_IRQ_PRIO_MID,
+			.NVIC_IRQChannelSubPriority = 0,
+			.NVIC_IRQChannelCmd = ENABLE,
+		},
+	},
+};
+#endif /* PIOS_INCLUDE_CAN */
 
 #if defined(PIOS_INCLUDE_FLASH)
 #include "pios_flashfs_logfs_priv.h"
+
+static const struct flashfs_logfs_cfg flashfs_internal_settings_cfg = {
+	.fs_magic      = 0x9ae1ee11,
+	.arena_size    = 0x00002000,       /* 32 * slot size = 8K bytes = 4 sectors */
+	.slot_size     = 0x00000100,       /* 256 bytes */
+};
+
+static const struct flashfs_logfs_cfg flashfs_internal_waypoints_cfg = {
+	.fs_magic      = 0x9ab4ee11,
+	.arena_size    = 0x00002000,       /* 32 * slot size = 8K bytes = 4 sectors */
+	.slot_size     = 0x00000100,       /* 256 bytes */
+};
+
 #include "pios_flash_internal_priv.h"
 
 static const struct pios_flash_internal_cfg flash_internal_cfg = {
 };
 
-static const struct flashfs_logfs_cfg flashfs_internal_settings_cfg = {
-	.fs_magic      = 0x9ae1ee11,
-	.total_fs_size = EE_BANK_SIZE / 2, /* 16K bytes (8x2KB sectors) */
-	.arena_size    = 0x00002000,       /* 32 * slot size = 8K bytes = 4 sectors */
-	.slot_size     = 0x00000100,       /* 256 bytes */
+#include "pios_flash_priv.h"
 
-	.start_offset  = EE_BANK_BASE, /* start after the bootloader */
-	.sector_size   = 0x00000800,   /* 2K bytes */
-	.page_size     = 0x00000800,   /* 2K bytes */
+static const struct pios_flash_sector_range stm32f3_sectors[] = {
+	{
+		.base_sector = 0,
+		.last_sector = 127,
+		.sector_size = FLASH_SECTOR_2KB,
+	},
 };
 
-static const struct flashfs_logfs_cfg flashfs_internal_waypoints_cfg = {
-	.fs_magic      = 0x9ab4ee11,
-	.total_fs_size = EE_BANK_SIZE / 2, /* 16K bytes (8x2KB sectors) */
-	.arena_size    = 0x00002000,       /* 32 * slot size = 8K bytes = 4 sectors */
-	.slot_size     = 0x00000100,       /* 256 bytes */
-
-	/* start after the settings */
-	.start_offset  = EE_BANK_BASE + EE_BANK_SIZE / 2, 
-	.sector_size   = 0x00000800,   /* 2K bytes */
-	.page_size     = 0x00000800,   /* 2K bytes */
+uintptr_t pios_internal_flash_id;
+static const struct pios_flash_chip pios_flash_chip_internal = {
+	.driver        = &pios_internal_flash_driver,
+	.chip_id       = &pios_internal_flash_id,
+	.page_size     = 16, /* 128-bit rows */
+	.sector_blocks = stm32f3_sectors,
+	.num_blocks    = NELEMENTS(stm32f3_sectors),
 };
 
-#include "pios_flash.h"
+static const struct pios_flash_partition pios_flash_partition_table[] = {
+	{
+		.label        = FLASH_PARTITION_LABEL_BL,
+		.chip_desc    = &pios_flash_chip_internal,
+		.first_sector = 0,
+		.last_sector  = 7,
+		.chip_offset  = 0,
+		.size         = (7 - 0 + 1) * FLASH_SECTOR_2KB,
+	},
+
+	{
+		.label        = FLASH_PARTITION_LABEL_SETTINGS,
+		.chip_desc    = &pios_flash_chip_internal,
+		.first_sector = 8,
+		.last_sector  = 15,
+		.chip_offset  = (8 * FLASH_SECTOR_2KB),
+		.size         = (15 - 8 + 1) * FLASH_SECTOR_2KB,
+	},
+
+	{
+		.label        = FLASH_PARTITION_LABEL_WAYPOINTS,
+		.chip_desc    = &pios_flash_chip_internal,
+		.first_sector = 16,
+		.last_sector  = 23,
+		.chip_offset  = (16 * FLASH_SECTOR_2KB),
+		.size         = (23 - 16 + 1) * FLASH_SECTOR_2KB,
+	},
+
+	{
+		.label        = FLASH_PARTITION_LABEL_FW,
+		.chip_desc    = &pios_flash_chip_internal,
+		.first_sector = 24,
+		.last_sector  = 127,
+		.chip_offset  = (24 * FLASH_SECTOR_2KB),
+		.size         = (127 - 24 + 1) * FLASH_SECTOR_2KB,
+	},
+};
 
 #endif	/* PIOS_INCLUDE_FLASH */
-
 
 
 #if defined(PIOS_INCLUDE_USART)

@@ -37,7 +37,6 @@
 #define PIOS_INCLUDE_SYS
 #define PIOS_INCLUDE_DELAY
 #define PIOS_INCLUDE_LED
-#define PIOS_INCLUDE_SDCARD
 #define PIOS_INCLUDE_FREERTOS
 #define PIOS_INCLUDE_COM
 //#define PIOS_INCLUDE_GPS
@@ -50,6 +49,8 @@
 #define PIOS_INCLUDE_GCSRCVR
 #define PIOS_INCLUDE_IAP
 #define PIOS_INCLUDE_BL_HELPER
+#define PIOS_INCLUDE_FLASH
+#define PIOS_INCLUDE_LOGFS_SETTINGS
 
 #define PIOS_RCVR_MAX_CHANNELS			12
 #define PIOS_RCVR_MAX_DEVS              3
@@ -81,5 +82,8 @@
 #define CPULOAD_LIMIT_CRITICAL		95
 
 #define REVOLUTION
+
+// Enable POI tracking mode for camera stabilization
+#define CAMERASTAB_POI_MODE
 
 #endif /* PIOS_CONFIG_POSIX_H */
