@@ -20,10 +20,18 @@ PWM ouputs:
 
 MPU6050 SCL -> I2C1_SCL (PB6)
 MPU6050 SDA -> I2C1_SDA (PB9)
-MPU6050 INT -> EXTI (PD11)
+MPU6050 INT -> EXTI11 (PD11)
 MPU6050 A0 -> GND
 
-SPI flash:
+HMC5883 SCL -> I2C1_SCL (PB6)
+HMC5883 SDA -> I2C1_SDA (PB9)
+HMC5883 INT -> EXTI1    (PC1) (optional but recommended)
+if not using INT, remove #define PIOS_HMC5883_HAS_GPIOS in pios_config.h
+
+MS5611 SCL -> I2C1_SCL (PB6)
+MS5611 SDA -> I2C1_SDA (PB9)
+
+SPI flash (optional, only required for storing waypoints, config is stored in MCU's internal flash)
 FLASH D (15) -> SPI2_MOSI (PB15)
 FLASH Q (8) -> SPI2_MISO (PB14)
 FLASH C (16) -> SPI2_SCK (PB13)
