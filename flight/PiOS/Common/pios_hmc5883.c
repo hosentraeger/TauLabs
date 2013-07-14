@@ -38,6 +38,7 @@
 #define HMC5883_TASK_PRIORITY        (tskIDLE_PRIORITY + configMAX_PRIORITIES - 1)  // max priority
 #define HMC5883_TASK_STACK	         (512 / 4)
 #define PIOS_HMC5883_MAX_DOWNSAMPLE  1
+#define HMC5883_UPDATE_PERIOD_MS 6
 
 /* Global Variables */
 
@@ -201,9 +202,8 @@ static uint8_t CTRLB = 0x00;
 static int32_t PIOS_HMC5883_Config(const struct pios_hmc5883_cfg * cfg)
 {
 	uint8_t CTRLA = 0x00;
-	uint8_t MODE = 0x00;
 	CTRLB = 0;
-	
+	uint8_t MODE = 0x00;
 	CTRLA |= (uint8_t) (cfg->M_ODR | cfg->Meas_Conf);
 	CTRLB |= (uint8_t) (cfg->Gain);
 	MODE |= (uint8_t) (cfg->Mode);
@@ -297,10 +297,10 @@ static int32_t PIOS_HMC5883_ReadMag(struct pios_sensor_mag_data *mag_data)
 			mag_data->z = -mag_z;
 			break;
 	}
-	
+#if defined (PIOS_HMC5883_HAS_GPIOS)	
 	// This should not be necessary but for some reason it is coming out of continuous conversion mode
 	PIOS_HMC5883_Write(PIOS_HMC5883_MODE_REG, PIOS_HMC5883_MODE_CONTINUOUS);
-	
+#endif	
 	return 0;
 }
 
@@ -428,12 +428,15 @@ static void PIOS_HMC5883_Task(void *parameters)
 			vTaskDelay(100 / portTICK_RATE_MS);
 			continue;
 		}
-
+#if defined (PIOS_HMC5883_HAS_GPIOS)
 		if (xSemaphoreTake(dev->data_ready_sema, portMAX_DELAY) != pdTRUE) {
 			vTaskDelay(100 / portTICK_RATE_MS);
 			continue;
 		}
-
+#else
+		PIOS_HMC5883_Write(PIOS_HMC5883_MODE_REG, PIOS_HMC5883_MODE_SINGLE);
+		vTaskDelay(HMC5883_UPDATE_PERIOD_MS / portTICK_RATE_MS);
+#endif
 		struct pios_sensor_mag_data mag_data;
 		if (PIOS_HMC5883_ReadMag(&mag_data) == 0)
 			xQueueSend(dev->queue, (void *) &mag_data, 0);
