@@ -886,10 +886,10 @@ void PIOS_Board_Init(void) {
 	PIOS_WDG_Clear();
 	PIOS_DELAY_WaitmS(50);
 	PIOS_WDG_Clear();
-
+/*
 	if (PIOS_I2C_CheckClear(PIOS_I2C_MAIN_ADAPTER) != 0)
 		panic(6);
-
+*/
 #if defined(PIOS_INCLUDE_HMC5883)
 	PIOS_HMC5883_Init(PIOS_I2C_MAIN_ADAPTER, &pios_hmc5883_cfg);
 	if (PIOS_HMC5883_Test() != 0)
