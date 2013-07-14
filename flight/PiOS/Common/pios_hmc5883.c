@@ -425,12 +425,12 @@ static void PIOS_HMC5883_Task(void *parameters)
 {
 	while(1) {
 		if(PIOS_HMC5883_Validate(dev) != 0) {
-			vTaskDelay(100 * portTICK_RATE_MS);
+			vTaskDelay(100 / portTICK_RATE_MS);
 			continue;
 		}
 
 		if (xSemaphoreTake(dev->data_ready_sema, portMAX_DELAY) != pdTRUE) {
-			vTaskDelay(100 * portTICK_RATE_MS);
+			vTaskDelay(100 / portTICK_RATE_MS);
 			continue;
 		}
 
