@@ -37,7 +37,6 @@ MSG_FORMATERROR      = ${quote} Can not handle output-format${quote}
 MSG_MODINIT          = ${quote} MODINIT   $(MSG_EXTRA) ${quote}
 MSG_SIZE             = ${quote} SIZE      $(MSG_EXTRA) ${quote}
 MSG_LOAD_FILE        = ${quote} BIN/HEX   $(MSG_EXTRA) ${quote}
-MSG_BIN_OBJ          = ${quote} BINO      $(MSG_EXTRA) ${quote}
 MSG_STRIP_FILE       = ${quote} STRIP     $(MSG_EXTRA) ${quote}
 MSG_EXTENDED_LISTING = ${quote} LIS       $(MSG_EXTRA) ${quote}
 MSG_SYMBOL_TABLE     = ${quote} NM        $(MSG_EXTRA) ${quote}
@@ -61,7 +60,7 @@ MSG_PADDING          = ${quote} PADDING   $(MSG_EXTRA) ${quote}
 MSG_FLASH_IMG        = ${quote} FLASH_IMG $(MSG_EXTRA) ${quote}
 MSG_GCOV             = ${quote} GCOV      $(MSG_EXTRA) ${quote}
 
-toprel = $(subst $(realpath $(TOP))/,,$(abspath $(1)))
+toprel = $(subst $(realpath $(ROOT_DIR))/,,$(abspath $(1)))
 
 # Display compiler version information.
 .PHONY: gccversion
@@ -86,17 +85,6 @@ gccversion :
 %.bin: %.o
 	@echo $(MSG_LOAD_FILE) $(call toprel, $@)
 	$(V1) $(OBJCOPY) -O binary $< $@
-
-replace_special_chars = $(subst @,_,$(subst :,_,$(subst -,_,$(subst .,_,$(subst /,_,$1)))))
-%.bin.o: %.bin
-	@echo $(MSG_BIN_OBJ) $(call toprel, $@)
-	$(V1) $(OBJCOPY) -I binary -O elf32-littlearm --binary-architecture arm \
-		--rename-section .data=.rodata,alloc,load,readonly,data,contents \
-		--wildcard \
-		--redefine-sym _binary_$(call replace_special_chars,$<)_start=_binary_start \
-		--redefine-sym _binary_$(call replace_special_chars,$<)_end=_binary_end \
-		--redefine-sym _binary_$(call replace_special_chars,$<)_size=_binary_size \
-		$< $@
 
 # Create extended listing file/disassambly from ELF output file.
 # using objdump testing: option -C
@@ -126,16 +114,16 @@ endef
 define TLFW_TEMPLATE
 FORCE:
 
-$(1).firmwareinfo.c: $(1) $(TOP)/make/templates/firmwareinfotemplate.c FORCE
+$(1).firmwareinfo.c: $(1) $(ROOT_DIR)/make/templates/firmwareinfotemplate.c FORCE
 	@echo $(MSG_FWINFO) $$(call toprel, $$@)
-	$(V1) python $(TOP)/make/scripts/version-info.py \
-		--path=$(TOP) \
-		--template=$(TOP)/make/templates/firmwareinfotemplate.c \
+	$(V1) python $(ROOT_DIR)/make/scripts/version-info.py \
+		--path=$(ROOT_DIR) \
+		--template=$(ROOT_DIR)/make/templates/firmwareinfotemplate.c \
 		--outfile=$$@ \
 		--image=$(1) \
 		--type=$(2) \
 		--revision=$(3) \
-		--uavodir=$(TOP)/shared/uavobjectdefinition
+		--uavodir=$(ROOT_DIR)/shared/uavobjectdefinition
 
 $(eval $(call COMPILE_C_TEMPLATE, $(1).firmwareinfo.c))
 
@@ -242,7 +230,7 @@ OOCD_EXE ?= openocd
 # debug level
 OOCD_JTAG_SETUP  = -d0
 # interface and board/target settings (using the OOCD target-library here)
-OOCD_JTAG_SETUP += -s $(TOP)/flight/Project/OpenOCD
+OOCD_JTAG_SETUP += -s $(ROOT_DIR)/flight/Project/OpenOCD
 OOCD_JTAG_SETUP += -f $(4) -f $(5)
 
 # initialize

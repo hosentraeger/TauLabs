@@ -39,6 +39,7 @@ HEADERS += $$UAVOBJECT_SYNTHETICS/accels.h \
     $$UAVOBJECT_SYNTHETICS/attitudesimulated.h \
     $$UAVOBJECT_SYNTHETICS/baroaltitude.h \
     $$UAVOBJECT_SYNTHETICS/baroairspeed.h \
+    $$UAVOBJECT_SYNTHETICS/brushlessgimbalsettings.h \
     $$UAVOBJECT_SYNTHETICS/cameradesired.h \
     $$UAVOBJECT_SYNTHETICS/camerastabsettings.h \
     $$UAVOBJECT_SYNTHETICS/faultsettings.h \
@@ -74,7 +75,6 @@ HEADERS += $$UAVOBJECT_SYNTHETICS/accels.h \
     $$UAVOBJECT_SYNTHETICS/hwrevolution.h \
     $$UAVOBJECT_SYNTHETICS/hwrevomini.h \
     $$UAVOBJECT_SYNTHETICS/hwsparky.h \
-    $$UAVOBJECT_SYNTHETICS/i2cstats.h \
     $$UAVOBJECT_SYNTHETICS/i2cvm.h \
     $$UAVOBJECT_SYNTHETICS/i2cvmuserprogram.h \
     $$UAVOBJECT_SYNTHETICS/inssettings.h \
@@ -141,6 +141,7 @@ SOURCES += $$UAVOBJECT_SYNTHETICS/accels.cpp \
     $$UAVOBJECT_SYNTHETICS/attitudesimulated.cpp \
     $$UAVOBJECT_SYNTHETICS/baroaltitude.cpp \
     $$UAVOBJECT_SYNTHETICS/baroairspeed.cpp \
+    $$UAVOBJECT_SYNTHETICS/brushlessgimbalsettings.cpp \
     $$UAVOBJECT_SYNTHETICS/cameradesired.cpp \
     $$UAVOBJECT_SYNTHETICS/camerastabsettings.cpp \
     $$UAVOBJECT_SYNTHETICS/faultsettings.cpp \
@@ -176,7 +177,6 @@ SOURCES += $$UAVOBJECT_SYNTHETICS/accels.cpp \
     $$UAVOBJECT_SYNTHETICS/hwrevolution.cpp \
     $$UAVOBJECT_SYNTHETICS/hwrevomini.cpp \
     $$UAVOBJECT_SYNTHETICS/hwsparky.cpp \
-    $$UAVOBJECT_SYNTHETICS/i2cstats.cpp \
     $$UAVOBJECT_SYNTHETICS/i2cvm.cpp \
     $$UAVOBJECT_SYNTHETICS/i2cvmuserprogram.cpp \
     $$UAVOBJECT_SYNTHETICS/inssettings.cpp \

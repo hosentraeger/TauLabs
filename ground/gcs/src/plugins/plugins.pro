@@ -175,6 +175,7 @@ SUBDIRS += plugin_waypointeditor
 plugin_telemetryscheduler.subdir = telemetryscheduler
 plugin_telemetryscheduler.depends = plugin_coreplugin
 plugin_telemetryscheduler.depends += plugin_uavobjects
+plugin_telemetryscheduler.depends += plugin_uavobjectutil
 SUBDIRS += plugin_telemetryscheduler
 
 # Primary Flight Display (PFD) gadget, QML version
@@ -220,6 +221,15 @@ plugin_logging.depends += plugin_uavobjects
 plugin_logging.depends += plugin_uavtalk
 plugin_logging.depends += plugin_scope
 SUBDIRS += plugin_logging
+
+KML { 
+    # KML Export plugin
+    plugin_kmlexport.subdir = kmlexport
+    plugin_kmlexport.depends = plugin_coreplugin
+    plugin_kmlexport.depends += plugin_uavobjects
+    plugin_kmlexport.depends += plugin_uavtalk
+    SUBDIRS += plugin_kmlexport
+}
 
 # GCS Control of UAV gadget
 !LIGHTWEIGHT_GCS {

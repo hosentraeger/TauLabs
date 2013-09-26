@@ -45,6 +45,8 @@
 #include <extensionsystem/pluginmanager.h>
 #include <coreplugin/generalsettings.h>
 
+#include "actuatorcommand.h"
+
 #define ACCESS_MIN_MOVE -3
 #define ACCESS_MAX_MOVE 3
 #define STICK_MIN_MOVE -8
@@ -60,10 +62,15 @@ ConfigInputWidget::ConfigInputWidget(QWidget *parent) : ConfigTaskWidget(parent)
     m_config->setupUi(this);
     
     ExtensionSystem::PluginManager *pm=ExtensionSystem::PluginManager::instance();
+    Q_ASSERT(pm);
     Core::Internal::GeneralSettings * settings=pm->getObject<Core::Internal::GeneralSettings>();
     if(!settings->useExpertMode())
         m_config->saveRCInputToRAM->setVisible(false);
-    
+
+    // Get telemetry manager and make sure it is valid
+    telMngr = pm->getObject<TelemetryManager>();
+    Q_ASSERT(telMngr);
+
     addApplySaveButtons(m_config->saveRCInputToRAM,m_config->saveRCInputToSD);
 
     //Generate the rows of buttons in the input channel form GUI
@@ -292,6 +299,9 @@ void ConfigInputWidget::openHelp()
 
 void ConfigInputWidget::goToWizard()
 {
+    // Monitor for connection loss to reset wizard safely
+    connect(telMngr, SIGNAL(disconnected()), this, SLOT(wzCancel()));
+
     QMessageBox msgBox;
     msgBox.setText(tr("Arming Settings will be set to Always Disarmed for your safety."));
     msgBox.setDetailedText(tr("You will have to reconfigure the arming settings manually "
@@ -327,6 +337,8 @@ void ConfigInputWidget::disableWizardButton(int value)
 
 void ConfigInputWidget::wzCancel()
 {
+    disconnect(telMngr, SIGNAL(disconnected()), this, SLOT(wzCancel()));
+
     dimOtherControls(false);
     manualCommandObj->setMetadata(manualCommandObj->getDefaultMetadata());
     m_config->stackedWidget->setCurrentIndex(0);
@@ -379,6 +391,8 @@ void ConfigInputWidget::wzNext()
         wizardSetUpStep(wizardFinish);
         break;
     case wizardFinish:
+        disconnect(telMngr, SIGNAL(disconnected()), this, SLOT(wzCancel()));
+
         wizardStep=wizardNone;
         m_config->stackedWidget->setCurrentIndex(0);
         m_config->tabWidget->setCurrentIndex(2);
@@ -694,13 +708,18 @@ void ConfigInputWidget::fastMdata()
                         UAVObject::SetFlightTelemetryUpdateMode(mdata, UAVObject::UPDATEMODE_PERIODIC);
                         mdata.flightTelemetryUpdatePeriod = fastUpdate;
                         break;
+                    case ActuatorCommand::OBJID:
+                        UAVObject::SetFlightAccess(mdata, UAVObject::ACCESS_READONLY);
+                        UAVObject::SetFlightTelemetryUpdateMode(mdata, UAVObject::UPDATEMODE_PERIODIC);
+                        mdata.flightTelemetryUpdatePeriod = slowUpdate;
+                        break;
                     default:
                         UAVObject::SetFlightTelemetryUpdateMode(mdata, UAVObject::UPDATEMODE_PERIODIC);
                         mdata.flightTelemetryUpdatePeriod = slowUpdate;
+                        break;
                 }
 
                 metaDataList.insert(obj->getName(), mdata);
-
             }
         }
     }

@@ -67,37 +67,17 @@ static bool PIOS_COM_validate(struct pios_com_dev * com_dev)
 	return (com_dev && (com_dev->magic == PIOS_COM_DEV_MAGIC));
 }
 
-#if defined(PIOS_INCLUDE_FREERTOS)
 static struct pios_com_dev * PIOS_COM_alloc(void)
 {
 	struct pios_com_dev * com_dev;
 
-	com_dev = (struct pios_com_dev *)pvPortMalloc(sizeof(*com_dev));
+	com_dev = (struct pios_com_dev *)PIOS_malloc(sizeof(*com_dev));
 	if (!com_dev) return (NULL);
 
 	memset(com_dev, 0, sizeof(*com_dev));
 	com_dev->magic = PIOS_COM_DEV_MAGIC;
 	return(com_dev);
 }
-#else
-static struct pios_com_dev pios_com_devs[PIOS_COM_MAX_DEVS];
-static uint8_t pios_com_num_devs;
-static struct pios_com_dev * PIOS_COM_alloc(void)
-{
-	struct pios_com_dev * com_dev;
-
-	if (pios_com_num_devs >= PIOS_COM_MAX_DEVS) {
-		return (NULL);
-	}
-
-	com_dev = &pios_com_devs[pios_com_num_devs++];
-
-	memset(com_dev, 0, sizeof(*com_dev));
-	com_dev->magic = PIOS_COM_DEV_MAGIC;
-
-	return (com_dev);
-}
-#endif
 
 static uint16_t PIOS_COM_TxOutCallback(uintptr_t context, uint8_t * buf, uint16_t buf_len, uint16_t * headroom, bool * need_yield);
 static uint16_t PIOS_COM_RxInCallback(uintptr_t context, uint8_t * buf, uint16_t buf_len, uint16_t * headroom, bool * need_yield);
@@ -502,7 +482,7 @@ uint16_t PIOS_COM_ReceiveBuffer(uintptr_t com_id, uint8_t * buf, uint16_t buf_le
 		}
 		if (timeout_ms > 0) {
 #if defined(PIOS_INCLUDE_FREERTOS)
-			if (xSemaphoreTake(com_dev->rx_sem, timeout_ms / portTICK_RATE_MS) == pdTRUE) {
+			if (xSemaphoreTake(com_dev->rx_sem, MS2TICKS(timeout_ms)) == pdTRUE) {
 				/* Make sure we don't come back here again */
 				timeout_ms = 0;
 				goto check_again;

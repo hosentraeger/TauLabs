@@ -6,7 +6,7 @@
  * @{
  *
  * @file       pios_flash_internal.c  
- * @author     Tau Labs, http://github.com/TauLabs, Copyright (C) 2012-2013.
+ * @author     Tau Labs, http://taulabs.org, Copyright (C) 2012-2013
  * @brief Provides a flash driver for the STM32 internal flash sectors
  *****************************************************************************/
 /* 
@@ -32,6 +32,7 @@
 #include "stm32f30x_flash.h"
 #include "pios_flash_internal_priv.h"
 #include "pios_wdg.h"
+#include "pios_semaphore.h"
 #include <stdbool.h>
 
 #define STM32F30X_FLASH_SECTOR_SIZE 2048
@@ -45,48 +46,24 @@ struct pios_internal_flash_dev {
 
 	const struct pios_flash_internal_cfg *cfg;
 
-#if defined(PIOS_INCLUDE_FREERTOS)
-	xSemaphoreHandle transaction_lock;
-#endif	/* defined(PIOS_INCLUDE_FREERTOS) */
+	struct pios_semaphore *transaction_lock;
 };
 
 static bool PIOS_Flash_Internal_Validate(struct pios_internal_flash_dev *flash_dev) {
 	return (flash_dev && (flash_dev->magic == PIOS_INTERNAL_FLASH_DEV_MAGIC));
 }
 
-#if defined(PIOS_INCLUDE_FREERTOS)
 static struct pios_internal_flash_dev *PIOS_Flash_Internal_alloc(void)
 {
 	struct pios_internal_flash_dev *flash_dev;
 
-	flash_dev = (struct pios_internal_flash_dev *)pvPortMalloc(sizeof(*flash_dev));
+	flash_dev = (struct pios_internal_flash_dev *)PIOS_malloc(sizeof(*flash_dev));
 	if (!flash_dev) return (NULL);
 
 	flash_dev->magic = PIOS_INTERNAL_FLASH_DEV_MAGIC;
 
 	return(flash_dev);
 }
-#else
-#ifndef PIOS_INTERNAL_FLASH_MAX_DEVS
-#define PIOS_INTERNAL_FLASH_MAX_DEVS 1
-#endif	/* PIOS_INTERNAL_FLASH_MAX_DEVS */
-static struct pios_internal_flash_dev pios_internal_flash_devs[PIOS_INTERNAL_FLASH_MAX_DEVS];
-static uint8_t pios_internal_flash_num_devs;
-static struct pios_internal_flash_dev *PIOS_Flash_Internal_alloc(void)
-{
-	struct pios_internal_flash_dev *flash_dev;
-
-	if (pios_internal_flash_num_devs >= PIOS_INTERNAL_FLASH_MAX_DEVS) {
-		return (NULL);
-	}
-
-	flash_dev = &pios_internal_flash_devs[pios_internal_flash_num_devs++];
-	flash_dev->magic = PIOS_INTERNAL_FLASH_DEV_MAGIC;
-
-	return (flash_dev);
-}
-
-#endif /* defined(PIOS_INCLUDE_FREERTOS) */
 
 int32_t PIOS_Flash_Internal_Init(uintptr_t *chip_id, const struct pios_flash_internal_cfg *cfg)
 {
@@ -96,9 +73,7 @@ int32_t PIOS_Flash_Internal_Init(uintptr_t *chip_id, const struct pios_flash_int
 	if (flash_dev == NULL)
 		return -1;
 
-#if defined(PIOS_INCLUDE_FREERTOS)
-	flash_dev->transaction_lock = xSemaphoreCreateMutex();
-#endif	/* defined(PIOS_INCLUDE_FREERTOS) */
+	flash_dev->transaction_lock = PIOS_Semaphore_Create();
 
 	flash_dev->cfg = cfg;
 
@@ -121,10 +96,8 @@ static int32_t PIOS_Flash_Internal_StartTransaction(uintptr_t chip_id)
 	if (!PIOS_Flash_Internal_Validate(flash_dev))
 		return -1;
 
-#if defined(PIOS_INCLUDE_FREERTOS)
-	if (xSemaphoreTake(flash_dev->transaction_lock, portMAX_DELAY) != pdTRUE)
+	if (PIOS_Semaphore_Take(flash_dev->transaction_lock, PIOS_SEMAPHORE_TIMEOUT_MAX) != true)
 		return -2;
-#endif	/* defined(PIOS_INCLUDE_FREERTOS) */
 
 	/* Unlock the internal flash so we can write to it */
 	FLASH_Unlock();
@@ -139,10 +112,8 @@ static int32_t PIOS_Flash_Internal_EndTransaction(uintptr_t chip_id)
 	if (!PIOS_Flash_Internal_Validate(flash_dev))
 		return -1;
 
-#if defined(PIOS_INCLUDE_FREERTOS)
-	if (xSemaphoreGive(flash_dev->transaction_lock) != pdTRUE)
+	if (PIOS_Semaphore_Give(flash_dev->transaction_lock) != true)
 		return -2;
-#endif	/* defined(PIOS_INCLUDE_FREERTOS) */
 
 	/* Lock the internal flash again so we can no longer write to it */
 	FLASH_Lock();

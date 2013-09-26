@@ -213,7 +213,7 @@ static void uavoMavlinkBridgeTask(void *parameters) {
 	lastSysTime = xTaskGetTickCount();
 
 	while (1) {
-		vTaskDelayUntil(&lastSysTime, (1000 / TASK_RATE_HZ) / portTICK_RATE_MS);
+		vTaskDelayUntil(&lastSysTime, MS2TICKS(1000 / TASK_RATE_HZ));
 
 		if (stream_trigger(MAV_DATA_STREAM_EXTENDED_STATUS)) {
 			if (FlightBatteryStateHandle() != NULL )
@@ -294,7 +294,7 @@ static void uavoMavlinkBridgeTask(void *parameters) {
 					// chan8_raw RC channel 8 value, in microseconds
 					manualState.Channel[7],
 					// rssi Receive signal strength indicator, 0: 0%, 255: 100%
-					0);
+					manualState.Rssi);
 			msg_length = mavlink_msg_to_send_buffer(serial_buf, &mavMsg);
 			PIOS_COM_SendBuffer(mavlink_port, serial_buf, msg_length);
 		}

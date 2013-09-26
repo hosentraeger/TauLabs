@@ -65,6 +65,7 @@ static void setHomeLocation(GPSPositionData * gpsData);
 // Private constants
 
 #define GPS_TIMEOUT_MS                  500
+#define GPS_COM_TIMEOUT_MS              100
 
 
 #ifdef PIOS_GPS_SETS_HOMELOCATION
@@ -188,7 +189,7 @@ int32_t GPSInitialize(void)
 	return -1;
 }
 
-MODULE_INITCALL(GPSInitialize, GPSStart)
+MODULE_INITCALL(GPSInitialize, GPSStart);
 
 // ****************
 /**
@@ -197,8 +198,8 @@ MODULE_INITCALL(GPSInitialize, GPSStart)
 
 static void gpsTask(void *parameters)
 {
-	portTickType xDelay = 100 / portTICK_RATE_MS;
-	uint32_t timeNowMs = xTaskGetTickCount() * portTICK_RATE_MS;
+	portTickType xDelay = MS2TICKS(GPS_COM_TIMEOUT_MS);
+	uint32_t timeNowMs = TICKS2MS(xTaskGetTickCount());
 
 	GPSPositionData gpsposition;
 	uint8_t	gpsProtocol;
@@ -239,14 +240,14 @@ static void gpsTask(void *parameters)
 			}
 
 			if (res == PARSER_COMPLETE) {
-				timeNowMs = xTaskGetTickCount() * portTICK_RATE_MS;
+				timeNowMs = TICKS2MS(xTaskGetTickCount());
 				timeOfLastUpdateMs = timeNowMs;
 				timeOfLastCommandMs = timeNowMs;
 			}
 		}
 
 		// Check for GPS timeout
-		timeNowMs = xTaskGetTickCount() * portTICK_RATE_MS;
+		timeNowMs = TICKS2MS(xTaskGetTickCount());
 		if ((timeNowMs - timeOfLastUpdateMs) >= GPS_TIMEOUT_MS) {
 			// we have not received any valid GPS sentences for a while.
 			// either the GPS is not plugged in or a hardware problem or the GPS has locked up.
@@ -292,7 +293,7 @@ static void setHomeLocation(GPSPositionData * gpsData)
 		// Store LLA
 		home.Latitude = gpsData->Latitude;
 		home.Longitude = gpsData->Longitude;
-		home.Altitude = gpsData->Altitude + gpsData->GeoidSeparation;
+		home.Altitude = gpsData->Altitude; // Altitude referenced to mean sea level geoid (likely EGM 1996, but no guarantees)
 
 		// Compute home ECEF coordinates and the rotation matrix into NED
 		double LLA[3] = { ((double)home.Latitude) / 10e6, ((double)home.Longitude) / 10e6, ((double)home.Altitude) };

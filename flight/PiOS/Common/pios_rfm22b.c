@@ -8,6 +8,7 @@
 *
 * @file       pios_rfm22b.c
 * @author     The OpenPilot Team, http://www.openpilot.org Copyright (C) 2012.
+* @author     Tau Labs, http://taulabs.org, Copyright (C) 2013
 * @brief      Implements a driver the the RFM22B driver
 * @see        The GNU Public License (GPL) Version 3
 *
@@ -502,9 +503,9 @@ static const uint8_t ss_reg_71[] = {  0x2B, 0x23}; // rfm22_modulation_mode_cont
 static inline uint32_t timeDifferenceMs(portTickType start_time, portTickType end_time)
 {
 	if(end_time >= start_time)
-		return (end_time - start_time) * portTICK_RATE_MS;
+		return TICKS2MS(end_time - start_time);
 	// Rollover
-	return ((portMAX_DELAY - start_time) + end_time) * portTICK_RATE_MS;
+	return TICKS2MS((portMAX_DELAY - start_time) + end_time);
 }
 
 bool PIOS_RFM22B_validate(struct pios_rfm22b_dev * rfm22b_dev)
@@ -512,34 +513,17 @@ bool PIOS_RFM22B_validate(struct pios_rfm22b_dev * rfm22b_dev)
 	return (rfm22b_dev != NULL && rfm22b_dev->magic == PIOS_RFM22B_DEV_MAGIC);
 }
 
-#if defined(PIOS_INCLUDE_FREERTOS)
 static struct pios_rfm22b_dev * PIOS_RFM22B_alloc(void)
 {
 	struct pios_rfm22b_dev * rfm22b_dev;
 
-	rfm22b_dev = (struct pios_rfm22b_dev *)pvPortMalloc(sizeof(*rfm22b_dev));
+	rfm22b_dev = (struct pios_rfm22b_dev *)PIOS_malloc(sizeof(*rfm22b_dev));
 	rfm22b_dev->spi_id = 0;
 	if (!rfm22b_dev) return(NULL);
 
 	rfm22b_dev->magic = PIOS_RFM22B_DEV_MAGIC;
 	return(rfm22b_dev);
 }
-#else
-static struct pios_rfm22b_dev pios_rfm22b_devs[PIOS_RFM22B_MAX_DEVS];
-static uint8_t pios_rfm22b_num_devs;
-static struct pios_rfm22b_dev * PIOS_RFM22B_alloc(void)
-{
-	struct pios_rfm22b_dev * rfm22b_dev;
-
-	if (pios_rfm22b_num_devs >= PIOS_RFM22B_MAX_DEVS)
-		return NULL;
-
-	rfm22b_dev = &pios_rfm22b_devs[pios_rfm22b_num_devs++];
-	rfm22b_dev->magic = PIOS_RFM22B_DEV_MAGIC;
-
-	return (rfm22b_dev);
-}
-#endif
 
 static struct pios_rfm22b_dev * g_rfm22b_dev =  NULL;
 
@@ -862,7 +846,7 @@ static void PIOS_RFM22B_Task(void *parameters)
 #endif /* PIOS_WDG_RFM22B */
 
 		// Wait for a signal indicating an external interrupt or a pending send/receive request.
-		if (xSemaphoreTake(rfm22b_dev->isrPending,  ISR_TIMEOUT / portTICK_RATE_MS) == pdTRUE) {
+		if (xSemaphoreTake(rfm22b_dev->isrPending,  MS2TICKS(ISR_TIMEOUT)) == pdTRUE) {
 			lastEventTicks = xTaskGetTickCount();
 
 			// Process events through the state machine.
