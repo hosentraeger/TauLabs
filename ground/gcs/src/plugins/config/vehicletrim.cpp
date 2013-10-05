@@ -1,7 +1,7 @@
 /**
  ******************************************************************************
  * @file       vehicletrim.cpp
- * @author     Tau Labs, http://www.taulabs.org, Copyright (C) 2013
+ * @author     Tau Labs, http://taulabs.org, Copyright (C) 2013
  * @brief      Gui-less support class for vehicle trimming
  *****************************************************************************/
 /*
@@ -41,11 +41,11 @@ VehicleTrim::~VehicleTrim()
 
 
 /**
- * @brief VehicleTrim::setFixedWingTrimAutopilotBias Takes the desired pitch and sets that as the
- * autopilot level bias.
+ * @brief VehicleTrim::setFixedWingTrimAutopilotBias Takes the desired roll and pitch,
+ * and sets that as the autopilot level bias.
  * @return success state
  */
-VehicleTrim::autopilotLevelBiasMessages VehicleTrim::setFixedWingTrimAutopilotBias()
+VehicleTrim::autopilotLevelBiasMessages VehicleTrim::setAutopilotBias()
 {
     SystemAlarms *systemAlarms = SystemAlarms::GetInstance(getObjectManager());
     FlightStatus *flightStatus = FlightStatus::GetInstance(getObjectManager());
@@ -100,7 +100,7 @@ VehicleTrim::autopilotLevelBiasMessages VehicleTrim::setFixedWingTrimAutopilotBi
  * these values as the neutral points.
  * @return success state
  */
-VehicleTrim::actuatorTrimMessages VehicleTrim::setFixedWingTrimActuators()
+VehicleTrim::actuatorTrimMessages VehicleTrim::setTrimActuators()
 {
     SystemAlarms *systemAlarms = SystemAlarms::GetInstance(getObjectManager());
     FlightStatus *flightStatus = FlightStatus::GetInstance(getObjectManager());
