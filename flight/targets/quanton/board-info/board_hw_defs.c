@@ -707,6 +707,71 @@ const struct pios_flash_partition * PIOS_BOARD_HW_DEFS_GetPartitionTable (uint32
 
 #endif	/* PIOS_INCLUDE_FLASH */
 
+#if defined(PIOS_INCLUDE_HCSR04)
+static const TIM_TimeBaseInitTypeDef tim_4_time_base = {
+	.TIM_Prescaler = (PIOS_PERIPHERAL_APB1_CLOCK / 1000000) - 1,
+	.TIM_ClockDivision = TIM_CKD_DIV1,
+	.TIM_CounterMode = TIM_CounterMode_Up,
+	.TIM_Period = 0xFFFF,
+	.TIM_RepetitionCounter = 0x0000,
+};
+
+static const struct pios_tim_clock_cfg tim_4_cfg = {
+	.timer = TIM4,
+	.time_base_init = &tim_4_time_base,
+	.irq = {
+		.init = {
+			.NVIC_IRQChannel                   = TIM4_IRQn,
+			.NVIC_IRQChannelPreemptionPriority = PIOS_IRQ_PRIO_MID,
+			.NVIC_IRQChannelSubPriority        = 0,
+			.NVIC_IRQChannelCmd                = ENABLE,
+		},
+	},
+};
+
+#include <pios_hcsr04_priv.h>
+
+static const struct pios_tim_channel pios_tim_hcsr04_port[] = {
+	{
+		.timer = TIM4,
+		.timer_chan = TIM_Channel_2,
+		.pin   = {
+			.gpio = GPIOB,
+			.init = {
+				.GPIO_Pin   = GPIO_Pin_7,
+				.GPIO_Mode  = GPIO_Mode_AF,
+				.GPIO_Speed = GPIO_Speed_2MHz,
+				.GPIO_PuPd  = GPIO_PuPd_DOWN
+			},
+			.pin_source     = GPIO_PinSource7,
+		},
+		.remap = GPIO_AF_TIM4,
+	},
+};
+
+const struct pios_hcsr04_cfg pios_hcsr04_cfg = {
+	.tim_ic_init = {
+		.TIM_ICPolarity  = TIM_ICPolarity_Rising,
+		.TIM_ICSelection = TIM_ICSelection_DirectTI,
+		.TIM_ICPrescaler = TIM_ICPSC_DIV1,
+		.TIM_ICFilter    = 0x0,
+	},
+	.channels     = pios_tim_hcsr04_port,
+	.num_channels = NELEMENTS(pios_tim_hcsr04_port),
+	.trigger = {
+		.gpio = GPIOB,
+		.init = {
+			.GPIO_Pin   = GPIO_Pin_6,
+			.GPIO_Mode  = GPIO_Mode_OUT,
+			.GPIO_OType = GPIO_OType_PP,
+			.GPIO_PuPd  = GPIO_PuPd_UP,
+			.GPIO_Speed = GPIO_Speed_2MHz,
+		},
+	},
+};
+
+#endif	/* PIOS_INCLUDE_HCSR04 */
+
 #if defined(PIOS_INCLUDE_USART)
 
 #include "pios_usart_priv.h"
