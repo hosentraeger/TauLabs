@@ -1299,6 +1299,21 @@ void PIOS_Board_Init(void) {
 		break;
 	case HWFLYINGF3_SHIELD_NONE:
 		break;
+	case HWFLYINGF3_SHIELD_HOSENTRAEGER:
+#if defined(PIOS_INCLUDE_ADC)
+		//Sanity check, this is to ensure that no one changes the adc_pins array without changing the defines
+		PIOS_Assert(internal_adc_cfg_rcflyer_shield.adc_pins[PIOS_ADC_RCFLYER_SHIELD_BARO_PIN].pin == GPIO_Pin_3);
+		PIOS_Assert(internal_adc_cfg_rcflyer_shield.adc_pins[PIOS_ADC_RCFLYER_SHIELD_BAT_VOLTAGE_PIN].pin == GPIO_Pin_4);
+		if (PIOS_INTERNAL_ADC_Init(&internal_adc_id, &internal_adc_cfg_rcflyer_shield) < 0)
+			PIOS_Assert(0);
+		PIOS_ADC_Init(&pios_internal_adc_id, &pios_internal_adc_driver, internal_adc_id);
+#endif
+#if defined(PIOS_INCLUDE_I2C) && defined(PIOS_INCLUDE_MS5611)
+		if (PIOS_MS5611_Init(&pios_ms5611_cfg, pios_i2c_external_id) != 0) {
+			PIOS_Assert(0);
+		}
+#endif	/* PIOS_INCLUDE_I2C && PIOS_INCLUDE_MS5611 */
+		break;
 	default:
 		PIOS_Assert(0);
 		break;
