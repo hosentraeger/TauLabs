@@ -17,6 +17,17 @@ include $(ROOT_DIR)/make/tools.mk
 
 # make sure this isn't being run as root, not relevant for windows
 ifndef WINDOWS
+  # Deal with unreasonable requests
+  # See: http://xkcd.com/149/
+  ifeq ($(MAKECMDGOALS),me a sandwich)
+    ifeq ($(shell whoami),root)
+      $(error Okay)
+    else
+      $(error What? Make it yourself)
+    endif
+  endif
+
+  # Seriously though, you shouldn't ever run this as root
   ifeq ($(shell whoami),root)
     $(error You should not be running this as root)
   endif
@@ -45,16 +56,6 @@ $(foreach var, $(SANITIZE_GCC_VARS), $(eval $(call SANITIZE_VAR,$(var),disallowe
 # These specific variables used to be valid but now they make no sense
 SANITIZE_DEPRECATED_VARS := USE_BOOTLOADER
 $(foreach var, $(SANITIZE_DEPRECATED_VARS), $(eval $(call SANITIZE_VAR,$(var),deprecated)))
-
-# Deal with unreasonable requests
-# See: http://xkcd.com/149/
-ifeq ($(MAKECMDGOALS),me a sandwich)
- ifeq ($(shell whoami),root)
- $(error Okay)
- else
- $(error What? Make it yourself)
- endif
-endif
 
 # Decide on a verbosity level based on the V= parameter
 export AT := @
@@ -254,7 +255,7 @@ endif
 gcs:  uavobjects_gcs
 	$(V1) mkdir -p $(BUILD_DIR)/ground/$@
 	$(V1) ( cd $(BUILD_DIR)/ground/$@ && \
-	  $(QMAKE) $(ROOT_DIR)/ground/gcs/gcs.pro -spec $(QT_SPEC) -r CONFIG+="$(GCS_BUILD_CONF) $(GCS_SILENT)" $(GCS_QMAKE_OPTS) && \
+	  PYTHON=$(PYTHON) $(QMAKE) $(ROOT_DIR)/ground/gcs/gcs.pro -spec $(QT_SPEC) -r CONFIG+="$(GCS_BUILD_CONF) $(GCS_SILENT)" $(GCS_QMAKE_OPTS) && \
 	  $(MAKE) -w ; \
 	)
 
@@ -273,7 +274,7 @@ endif
 uavobjgenerator:
 	$(V1) mkdir -p $(BUILD_DIR)/ground/$@
 	$(V1) ( cd $(BUILD_DIR)/ground/$@ && \
-	  $(QMAKE) $(ROOT_DIR)/ground/uavobjgenerator/uavobjgenerator.pro -spec $(QT_SPEC) -r CONFIG+="debug $(UAVOGEN_SILENT)" && \
+	  PYTHON=$(PYTHON) $(QMAKE) $(ROOT_DIR)/ground/uavobjgenerator/uavobjgenerator.pro -spec $(QT_SPEC) -r CONFIG+="debug $(UAVOGEN_SILENT)" && \
 	  $(MAKE) --no-print-directory -w ; \
 	)
 
@@ -311,7 +312,7 @@ $(MATLAB_OUT_DIR):
 
 FORCE:
 $(MATLAB_OUT_DIR)/LogConvert.m: $(MATLAB_OUT_DIR) uavobjects_matlab FORCE
-	$(V1) python $(ROOT_DIR)/make/scripts/version-info.py \
+	$(V1) $(PYTHON) $(ROOT_DIR)/make/scripts/version-info.py \
 		--path=$(ROOT_DIR) \
 		--template=$(BUILD_DIR)/uavobject-synthetics/matlab/LogConvert.m.pass1 \
 		--outfile=$@ \
@@ -426,7 +427,7 @@ define UAVO_COLLECTION_BUILD_TEMPLATE
 $$(UAVO_COLLECTION_DIR)/$(1)/uavohash: $$(UAVO_COLLECTION_DIR)/$(1)/uavo-xml
         # Compute the sha1 hash for this UAVO collection
         # The sed bit truncates the UAVO hash to 16 hex digits
-	$$(V1) python $$(ROOT_DIR)/make/scripts/version-info.py \
+	$$(V1) $(PYTHON) $$(ROOT_DIR)/make/scripts/version-info.py \
 			--path=$$(ROOT_DIR) \
 			--uavodir=$$(UAVO_COLLECTION_DIR)/$(1)/uavo-xml/shared/uavobjectdefinition \
 			--format='$$$${UAVOSHA1TXT}' | \
@@ -480,7 +481,7 @@ $$(UAVO_COLLECTION_DIR)/$(1)/matlab-build/LogConvert.m: $$(UAVO_COLLECTION_DIR)/
 	$$(V1) ( \
 		HASH=$$$$(cat $$(UAVO_COLLECTION_DIR)/$(1)/uavohash) && \
 		cd $$(UAVO_COLLECTION_DIR)/$(1)/matlab-build && \
-		python $(ROOT_DIR)/make/scripts/version-info.py \
+		$(PYTHON) $(ROOT_DIR)/make/scripts/version-info.py \
 			--path=$$(ROOT_DIR) \
 			--template=$$(UAVO_COLLECTION_DIR)/$(1)/matlab-build/matlab/LogConvert.m.pass1 \
 		--outfile=$$@ \
@@ -877,6 +878,7 @@ $(eval $(call SIM_TEMPLATE,openpilot,OpenPilot,'op  ',win32,exe))
 ##############################
 
 ALL_UNITTESTS := logfs i2c_vm misc_math sin_lookup coordinate_conversions
+ALL_PYTHON_UNITTESTS := python_ut_test
 
 UT_OUT_DIR := $(BUILD_DIR)/unit_tests
 
@@ -896,7 +898,7 @@ all_ut_tap: all_ut_xml
 all_ut_xml: $(addsuffix _xml, $(addprefix ut_, $(ALL_UNITTESTS)))
 
 .PHONY: all_ut_run
-all_ut_run: $(addsuffix _run, $(addprefix ut_, $(ALL_UNITTESTS)))
+all_ut_run: $(addsuffix _run, $(addprefix ut_, $(ALL_UNITTESTS))) $(ALL_PYTHON_UNITTESTS)
 
 .PHONY: all_ut_gcov
 all_ut_gcov: | $(addsuffix _gcov, $(addprefix ut_, $(ALL_UNITTESTS)))
@@ -952,6 +954,11 @@ endef
 
 # Expand the unittest rules
 $(foreach ut, $(ALL_UNITTESTS), $(eval $(call UT_TEMPLATE,$(ut))))
+
+.PHONY: python_ut_test
+python_ut_test:
+	$(V0) @echo "  PYTHON_UT test.py"
+	$(V1) $(PYTHON) python/test.py
 
 # Disable parallel make when the all_ut_run target is requested otherwise the TAP
 # output is interleaved with the rest of the make output.

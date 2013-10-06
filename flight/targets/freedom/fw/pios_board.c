@@ -163,6 +163,7 @@ uintptr_t pios_rcvr_group_map[MANUALCONTROLSETTINGS_CHANNELGROUPS_NONE];
 #define PIOS_COM_TELEM_RF_TX_BUF_LEN 512
 
 #define PIOS_COM_GPS_RX_BUF_LEN 32
+#define PIOS_COM_GPS_TX_BUF_LEN 16
 
 #define PIOS_COM_TELEM_USB_RX_BUF_LEN 65
 #define PIOS_COM_TELEM_USB_TX_BUF_LEN 65
@@ -171,6 +172,12 @@ uintptr_t pios_rcvr_group_map[MANUALCONTROLSETTINGS_CHANNELGROUPS_NONE];
 #define PIOS_COM_BRIDGE_TX_BUF_LEN 12
 
 #define PIOS_COM_MAVLINK_TX_BUF_LEN 128
+
+#define PIOS_COM_HOTT_RX_BUF_LEN 16
+#define PIOS_COM_HOTT_TX_BUF_LEN 16
+#define PIOS_COM_LIGHTTELEMETRY_TX_BUF_LEN 19
+
+#define PIOS_COM_FRSKYSENSORHUB_TX_BUF_LEN 128
 
 #if defined(PIOS_INCLUDE_DEBUG_CONSOLE)
 #define PIOS_COM_DEBUGCONSOLE_TX_BUF_LEN 40
@@ -184,6 +191,9 @@ uintptr_t pios_com_vcp_id;
 uintptr_t pios_com_bridge_id;
 uintptr_t pios_com_overo_id;
 uintptr_t pios_com_mavlink_id;
+uintptr_t pios_com_hott_id;
+uintptr_t pios_com_frsky_sensor_hub_id;
+uintptr_t pios_com_lighttelemetry_id;
 uintptr_t pios_internal_adc_id;
 uint32_t pios_rfm22b_id;
 uintptr_t pios_uavo_settings_fs_id;
@@ -530,7 +540,7 @@ void PIOS_Board_Init(void) {
 			PIOS_Board_configure_com(&pios_usart_main_cfg, PIOS_COM_TELEM_RF_RX_BUF_LEN, PIOS_COM_TELEM_RF_TX_BUF_LEN, &pios_usart_com_driver, &pios_com_telem_rf_id);
 			break;
 		case HWFREEDOM_MAINPORT_GPS:
-			PIOS_Board_configure_com(&pios_usart_main_cfg, PIOS_COM_GPS_RX_BUF_LEN, 0, &pios_usart_com_driver, &pios_com_gps_id);
+			PIOS_Board_configure_com(&pios_usart_main_cfg, PIOS_COM_GPS_RX_BUF_LEN, PIOS_COM_GPS_RX_BUF_LEN, &pios_usart_com_driver, &pios_com_gps_id);
 			break;
 		case HWFREEDOM_MAINPORT_DSM2:
 		case HWFREEDOM_MAINPORT_DSMX10BIT:
@@ -600,6 +610,21 @@ void PIOS_Board_Init(void) {
 #endif	/* PIOS_INCLUDE_MAVLINK */
 #endif	/* PIOS_INCLUDE_GPS */
 			break;
+		case HWFREEDOM_MAINPORT_HOTTTELEMETRY:
+#if defined(PIOS_INCLUDE_HOTT) && defined(PIOS_INCLUDE_USART) && defined(PIOS_INCLUDE_COM)
+			PIOS_Board_configure_com(&pios_usart_main_cfg, PIOS_COM_HOTT_RX_BUF_LEN, PIOS_COM_HOTT_TX_BUF_LEN, &pios_usart_com_driver, &pios_com_hott_id);
+#endif /* PIOS_INCLUDE_HOTT */
+			break;
+    	case HWFREEDOM_MAINPORT_FRSKYSENSORHUB:
+#if defined(PIOS_INCLUDE_FRSKY_SENSOR_HUB) && defined(PIOS_INCLUDE_USART) && defined(PIOS_INCLUDE_COM)
+		PIOS_Board_configure_com(&pios_usart_main_cfg, 0, PIOS_COM_FRSKYSENSORHUB_TX_BUF_LEN, &pios_usart_com_driver, &pios_com_frsky_sensor_hub_id);
+#endif /* PIOS_INCLUDE_FRSKY_SENSOR_HUB */
+		break;
+		case HWFREEDOM_MAINPORT_LIGHTTELEMETRYTX:
+#if defined(PIOS_INCLUDE_LIGHTTELEMETRY)
+		PIOS_Board_configure_com(&pios_usart_main_cfg, 0, PIOS_COM_LIGHTTELEMETRY_TX_BUF_LEN, &pios_usart_com_driver, &pios_com_lighttelemetry_id);
+#endif  
+		break;
 	} /* hw_freedom_mainport */
 
 	/* Configure flexi USART port */
@@ -612,7 +637,7 @@ void PIOS_Board_Init(void) {
 			PIOS_Board_configure_com(&pios_usart_flexi_cfg, PIOS_COM_TELEM_RF_RX_BUF_LEN, PIOS_COM_TELEM_RF_TX_BUF_LEN, &pios_usart_com_driver, &pios_com_telem_rf_id);
 			break;
 		case HWFREEDOM_FLEXIPORT_GPS:
-			PIOS_Board_configure_com(&pios_usart_flexi_cfg, PIOS_COM_GPS_RX_BUF_LEN, 0, &pios_usart_com_driver, &pios_com_gps_id);
+			PIOS_Board_configure_com(&pios_usart_flexi_cfg, PIOS_COM_GPS_RX_BUF_LEN, PIOS_COM_GPS_RX_BUF_LEN, &pios_usart_com_driver, &pios_com_gps_id);
 			break;
 		case HWFREEDOM_FLEXIPORT_DSM2:
 		case HWFREEDOM_FLEXIPORT_DSMX10BIT:
@@ -693,6 +718,21 @@ void PIOS_Board_Init(void) {
 #endif	/* PIOS_INCLUDE_MAVLINK */
 #endif	/* PIOS_INCLUDE_GPS */
 			break;
+		case HWFREEDOM_FLEXIPORT_HOTTTELEMETRY:
+#if defined(PIOS_INCLUDE_HOTT) && defined(PIOS_INCLUDE_USART) && defined(PIOS_INCLUDE_COM)
+			PIOS_Board_configure_com(&pios_usart_flexi_cfg, PIOS_COM_HOTT_RX_BUF_LEN, PIOS_COM_HOTT_TX_BUF_LEN, &pios_usart_com_driver, &pios_com_hott_id);
+#endif /* PIOS_INCLUDE_HOTT */
+			break;
+    	case HWFREEDOM_FLEXIPORT_FRSKYSENSORHUB:
+#if defined(PIOS_INCLUDE_FRSKY_SENSOR_HUB) && defined(PIOS_INCLUDE_USART) && defined(PIOS_INCLUDE_COM)
+		PIOS_Board_configure_com(&pios_usart_flexi_cfg, 0, PIOS_COM_FRSKYSENSORHUB_TX_BUF_LEN, &pios_usart_com_driver, &pios_com_frsky_sensor_hub_id);
+#endif /* PIOS_INCLUDE_FRSKY_SENSOR_HUB */
+		break;
+		case HWFREEDOM_FLEXIPORT_LIGHTTELEMETRYTX:
+#if defined(PIOS_INCLUDE_LIGHTTELEMETRY)
+		PIOS_Board_configure_com(&pios_usart_flexi_cfg, 0, PIOS_COM_LIGHTTELEMETRY_TX_BUF_LEN, &pios_usart_com_driver, &pios_com_lighttelemetry_id);
+#endif  
+		break;
 	} /* 	hw_freedom_flexiport */
 
 	/* Initalize the RFM22B radio COM device. */

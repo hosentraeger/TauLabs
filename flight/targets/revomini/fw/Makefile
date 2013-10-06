@@ -33,7 +33,7 @@ DEBUG ?= NO
 
 # List of modules to include
 MODULES = Sensors
-MODULES += Attitude/revolution 
+MODULES += Attitude 
 MODULES += ManualControl
 MODULES += Stabilization
 MODULES += Actuator
@@ -54,7 +54,10 @@ OPTMODULES += TxPID
 OPTMODULES += Battery
 OPTMODULES += VibrationAnalysis
 OPTMODULES += UAVOMavlinkBridge
+OPTMODULES += UAVOLighttelemetryBridge
 OPTMODULES += Airspeed/revolution
+OPTMODULES += UAVOHoTTBridge
+OPTMODULES += UAVOFrSKYSensorHubBridge
 
 # Paths
 OPUAVTALKINC = $(OPUAVTALK)/inc
@@ -147,6 +150,7 @@ SRC += $(RSCODE)/rs.c
 include $(PIOS)/STM32F4xx/library_fw.mk
 
 ## PIOS Hardware (Common)
+SRC += $(PIOSCOMMON)/pios_delay.c
 SRC += $(PIOSCOMMON)/pios_mpu6000.c
 SRC += $(PIOSCOMMON)/pios_bma180.c
 SRC += $(PIOSCOMMON)/pios_etasv3.c
@@ -227,6 +231,7 @@ EXTRAINCDIRS  += $(BOOTINC)
 EXTRAINCDIRS  += $(PYMITEINC)
 EXTRAINCDIRS  += $(DEBUG_CM3_DIR_INC)
 EXTRAINCDIRS  += $(MAVLINKINC)
+
 
 # Generate intermediate code
 gencode: ${OUTDIR}/pmlib_img.c ${OUTDIR}/pmlib_nat.c ${OUTDIR}/pmlibusr_img.c ${OUTDIR}/pmlibusr_nat.c ${OUTDIR}/pmfeatures.h 

@@ -50,7 +50,7 @@
 #if defined(PIOS_INCLUDE_MS5611)
 #include "pios_ms5611_priv.h"
 static const struct pios_ms5611_cfg pios_ms5611_cfg = {
-	.oversampling = MS5611_OSR_4096,
+	.oversampling = MS5611_OSR_1024,
 	.temperature_interleaving = 1,
 };
 #endif /* PIOS_INCLUDE_MS5611 */
@@ -161,6 +161,7 @@ uintptr_t pios_rcvr_group_map[MANUALCONTROLSETTINGS_CHANNELGROUPS_NONE];
 #define PIOS_COM_TELEM_RF_TX_BUF_LEN 512
 
 #define PIOS_COM_GPS_RX_BUF_LEN 32
+#define PIOS_COM_GPS_TX_BUF_LEN 16
 
 #define PIOS_COM_TELEM_USB_RX_BUF_LEN 65
 #define PIOS_COM_TELEM_USB_TX_BUF_LEN 65
@@ -172,6 +173,12 @@ uintptr_t pios_rcvr_group_map[MANUALCONTROLSETTINGS_CHANNELGROUPS_NONE];
 #define PIOS_COM_BRIDGE_TX_BUF_LEN 12
 
 #define PIOS_COM_MAVLINK_TX_BUF_LEN 32
+#define PIOS_COM_LIGHTTELEMETRY_TX_BUF_LEN 19 
+
+#define PIOS_COM_HOTT_RX_BUF_LEN 16
+#define PIOS_COM_HOTT_TX_BUF_LEN 16
+
+#define PIOS_COM_FRSKYSENSORHUB_TX_BUF_LEN 128
 
 #if defined(PIOS_INCLUDE_DEBUG_CONSOLE)
 #define PIOS_COM_DEBUGCONSOLE_TX_BUF_LEN 40
@@ -185,6 +192,9 @@ uintptr_t pios_com_telem_rf_id;
 uintptr_t pios_com_vcp_id;
 uintptr_t pios_com_bridge_id;
 uintptr_t pios_com_mavlink_id;
+uintptr_t pios_com_hott_id;
+uintptr_t pios_com_frsky_sensor_hub_id;
+uintptr_t pios_com_lighttelemetry_id; 
 uintptr_t pios_com_can_id;
 
 uintptr_t pios_uavo_settings_fs_id;
@@ -574,7 +584,7 @@ void PIOS_Board_Init(void) {
 		break;
 	case HWSPARKY_FLEXIPORT_GPS:
 #if defined(PIOS_INCLUDE_GPS) && defined(PIOS_INCLUDE_USART) && defined(PIOS_INCLUDE_COM)
-		PIOS_Board_configure_com(&pios_flexi_usart_cfg, PIOS_COM_GPS_RX_BUF_LEN, 0, &pios_usart_com_driver, &pios_com_gps_id);
+		PIOS_Board_configure_com(&pios_flexi_usart_cfg, PIOS_COM_GPS_RX_BUF_LEN, PIOS_COM_GPS_TX_BUF_LEN, &pios_usart_com_driver, &pios_com_gps_id);
 #endif
 		break;
 	case HWSPARKY_FLEXIPORT_SBUS:
@@ -644,6 +654,21 @@ void PIOS_Board_Init(void) {
 #endif  /* PIOS_INCLUDE_MAVLINK */
 #endif  /* PIOS_INCLUDE_GPS */
 		break;
+	case HWSPARKY_FLEXIPORT_HOTTTELEMETRY:
+#if defined(PIOS_INCLUDE_HOTT) && defined(PIOS_INCLUDE_USART) && defined(PIOS_INCLUDE_COM)
+		PIOS_Board_configure_com(&pios_flexi_usart_cfg, PIOS_COM_HOTT_RX_BUF_LEN, PIOS_COM_HOTT_TX_BUF_LEN, &pios_usart_com_driver, &pios_com_hott_id);
+#endif /* PIOS_INCLUDE_HOTT */
+		break;
+	case HWSPARKY_FLEXIPORT_FRSKYSENSORHUB:
+#if defined(PIOS_INCLUDE_FRSKY_SENSOR_HUB) && defined(PIOS_INCLUDE_USART) && defined(PIOS_INCLUDE_COM)
+		PIOS_Board_configure_com(&pios_flexi_usart_cfg, 0, PIOS_COM_FRSKYSENSORHUB_TX_BUF_LEN, &pios_usart_com_driver, &pios_com_frsky_sensor_hub_id);
+#endif /* PIOS_INCLUDE_FRSKY_SENSOR_HUB */
+		break;
+	case HWSPARKY_FLEXIPORT_LIGHTTELEMETRYTX:
+#if defined(PIOS_INCLUDE_LIGHTTELEMETRY)
+	PIOS_Board_configure_com(&pios_flexi_usart_cfg, 0, PIOS_COM_LIGHTTELEMETRY_TX_BUF_LEN, &pios_usart_com_driver, &pios_com_lighttelemetry_id);
+#endif
+		break;	
 	}
 
 	/* UART3 Port */
@@ -659,7 +684,7 @@ void PIOS_Board_Init(void) {
 		break;
 	case HWSPARKY_MAINPORT_GPS:
 #if defined(PIOS_INCLUDE_GPS) && defined(PIOS_INCLUDE_USART) && defined(PIOS_INCLUDE_COM)
-		PIOS_Board_configure_com(&pios_main_usart_cfg, PIOS_COM_GPS_RX_BUF_LEN, 0, &pios_usart_com_driver, &pios_com_gps_id);
+		PIOS_Board_configure_com(&pios_main_usart_cfg, PIOS_COM_GPS_RX_BUF_LEN, PIOS_COM_GPS_TX_BUF_LEN, &pios_usart_com_driver, &pios_com_gps_id);
 #endif
 		break;
 	case HWSPARKY_MAINPORT_SBUS:
@@ -729,6 +754,21 @@ void PIOS_Board_Init(void) {
 #endif  /* PIOS_INCLUDE_MAVLINK */
 #endif  /* PIOS_INCLUDE_GPS */
 		break;
+	case HWSPARKY_MAINPORT_HOTTTELEMETRY:
+#if defined(PIOS_INCLUDE_HOTT) && defined(PIOS_INCLUDE_USART) && defined(PIOS_INCLUDE_COM)
+		PIOS_Board_configure_com(&pios_main_usart_cfg, PIOS_COM_HOTT_RX_BUF_LEN, PIOS_COM_HOTT_TX_BUF_LEN, &pios_usart_com_driver, &pios_com_hott_id);
+#endif /* PIOS_INCLUDE_HOTT */
+		break;
+	case HWSPARKY_MAINPORT_FRSKYSENSORHUB:
+#if defined(PIOS_INCLUDE_FRSKY_SENSOR_HUB) && defined(PIOS_INCLUDE_USART) && defined(PIOS_INCLUDE_COM)
+		PIOS_Board_configure_com(&pios_main_usart_cfg, 0, PIOS_COM_FRSKYSENSORHUB_TX_BUF_LEN, &pios_usart_com_driver, &pios_com_frsky_sensor_hub_id);
+#endif /* PIOS_INCLUDE_FRSKY_SENSOR_HUB */
+		break;
+	case HWSPARKY_MAINPORT_LIGHTTELEMETRYTX:
+#if defined(PIOS_INCLUDE_LIGHTTELEMETRY)
+	PIOS_Board_configure_com(&pios_main_usart_cfg, 0, PIOS_COM_LIGHTTELEMETRY_TX_BUF_LEN, &pios_usart_com_driver, &pios_com_lighttelemetry_id);
+#endif /* PIOS_INCLUDE_LIGHTTELEMETRY */
+		break;  
 	}
 
 	/* Configure the rcvr port */

@@ -32,7 +32,7 @@ DEBUG ?= NO
 
 # List of modules to include
 MODULES = Sensors
-MODULES += Attitude/revolution
+MODULES += Attitude
 MODULES += BrushlessGimbal
 MODULES += ManualControl
 MODULES += Stabilization
@@ -96,7 +96,6 @@ SRC += $(DEBUG_CM3_DIR)/dcc_stdio.c
 SRC += $(DEBUG_CM3_DIR)/cm3_fault_handlers.c
 endif
 
-SRC += $(FLIGHTLIB)/paths.c
 SRC += $(FLIGHTLIB)/fifo_buffer.c
 SRC += $(FLIGHTLIB)/WorldMagModel.c
 SRC += $(FLIGHTLIB)/insgps13state.c
@@ -112,6 +111,7 @@ SRC += $(MATHLIB)/atmospheric_math.c
 include $(PIOS)/STM32F30x/library_fw.mk
 
 ## PIOS Hardware (Common)
+SRC += $(PIOSCOMMON)/pios_delay.c
 SRC += $(PIOSCOMMON)/pios_mpu6050.c
 SRC += $(PIOSCOMMON)/pios_mpu9150.c
 SRC += $(PIOSCOMMON)/pios_ms5611.c

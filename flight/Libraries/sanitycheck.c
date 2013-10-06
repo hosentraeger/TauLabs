@@ -27,10 +27,14 @@
 #include "openpilot.h"
 #include "taskmonitor.h"
 #include <pios_board_info.h>
+#include "flightstatus.h"
 #include "sanitycheck.h"
 #include "manualcontrolsettings.h"
+#include "stabilizationsettings.h"
 #include "systemalarms.h"
 #include "systemsettings.h"
+
+#include "pios_sensors.h"
 
 /****************************
  * Current checks:
@@ -38,8 +42,14 @@
  * 2. If airframe is a multirotor and either manual is available or a stabilization mode uses "none"
  ****************************/
 
+//! Check it is safe to arm in this position
+static int32_t check_safe_to_arm();
+
 //! Check a stabilization mode switch position for safety
 static int32_t check_stabilization_settings(int index, bool multirotor);
+
+//! Check a stabilization mode switch position for safety
+static int32_t check_stabilization_rates();
 
 //!  Set the error code and alarm state
 static void set_config_error(SystemAlarmsConfigErrorOptions error_code);
@@ -159,6 +169,12 @@ int32_t configuration_check()
 		}
 	}
 
+	// Check the stabilization rates are within what the sensors can track
+	error_code = (error_code == SYSTEMALARMS_CONFIGERROR_NONE) ? check_stabilization_rates() : error_code;
+
+	// Only check safe to arm if no other errors exist
+	error_code = (error_code == SYSTEMALARMS_CONFIGERROR_NONE) ? check_safe_to_arm() : error_code;
+
 	set_config_error(error_code);
 
 	return 0;
@@ -231,6 +247,55 @@ static int32_t check_stabilization_settings(int index, bool multirotor)
 }
 
 /**
+ * If the system is disarmed, look for a variety of conditions that
+ * make it unsafe to arm (that might not be dangerous to engage once
+ * flying).
+ */
+static int32_t check_safe_to_arm()
+{
+	FlightStatusData flightStatus;
+	FlightStatusGet(&flightStatus);
+
+	// Only arm in traditional modes where pilot has control
+	if (flightStatus.Armed != FLIGHTSTATUS_ARMED_ARMED) {
+		switch (flightStatus.FlightMode) {
+			case FLIGHTSTATUS_FLIGHTMODE_MANUAL:
+			case FLIGHTSTATUS_FLIGHTMODE_STABILIZED1:
+			case FLIGHTSTATUS_FLIGHTMODE_STABILIZED2:
+			case FLIGHTSTATUS_FLIGHTMODE_STABILIZED3:
+				break;
+			default:
+				// Any mode not specifically allowed prevents arming
+				return SYSTEMALARMS_CONFIGERROR_UNSAFETOARM;
+		}
+	}
+
+	return SYSTEMALARMS_CONFIGERROR_NONE;
+}
+
+/**
+ * Check the rates achieved via stabilization are ones that can be tracked
+ * by the gyros as configured.
+ * @return error code if not
+ */
+static int32_t check_stabilization_rates()
+{
+	const float MAXIMUM_SAFE_FRACTIONAL_RATE = 0.85;
+	int32_t max_safe_rate = PIOS_SENSORS_GetMaxGyro() * MAXIMUM_SAFE_FRACTIONAL_RATE;
+	float rates[3];
+
+	StabilizationSettingsManualRateGet(rates);
+	if (rates[0] > max_safe_rate || rates[1] > max_safe_rate || rates[2] > max_safe_rate)
+		return SYSTEMALARMS_CONFIGERROR_STABILIZATION;
+
+	StabilizationSettingsMaximumRateGet(rates);
+	if (rates[0] > max_safe_rate || rates[1] > max_safe_rate || rates[2] > max_safe_rate)
+		return SYSTEMALARMS_CONFIGERROR_STABILIZATION;
+
+	return SYSTEMALARMS_CONFIGERROR_NONE;
+}
+
+/**
  * Set the error code and alarm state
  * @param[in] error code
  */
@@ -249,6 +314,7 @@ static void set_config_error(SystemAlarmsConfigErrorOptions error_code)
 	case SYSTEMALARMS_CONFIGERROR_VELOCITYCONTROL:
 	case SYSTEMALARMS_CONFIGERROR_POSITIONHOLD:
 	case SYSTEMALARMS_CONFIGERROR_PATHPLANNER:
+	case SYSTEMALARMS_CONFIGERROR_UNSAFETOARM:
 		severity = SYSTEMALARMS_ALARM_ERROR;
 		break;
 	default:

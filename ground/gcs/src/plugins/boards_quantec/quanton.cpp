@@ -28,6 +28,12 @@
 
 #include "quanton.h"
 
+#include <uavobjectmanager.h>
+#include "uavobjectutil/uavobjectutilmanager.h"
+#include <extensionsystem/pluginmanager.h>
+
+#include "hwquanton.h"
+
 /**
  * @brief Quanton::Quanton
  *  This is the Quanton board definition
@@ -42,6 +48,13 @@ Quanton::Quanton(void)
     setUSBInfo(board);
 
     boardType = 0x86;
+
+    // Define the bank of channels that are connected to a given timer
+    channelBanks.resize(6);
+    channelBanks[0] = QVector<int> () << 1 << 2 << 3 << 4;
+    channelBanks[1] = QVector<int> () << 5 << 6;
+    channelBanks[2] = QVector<int> () << 7;
+    channelBanks[3] = QVector<int> () << 8;
 }
 
 Quanton::~Quanton()
@@ -77,11 +90,6 @@ bool Quanton::queryCapabilities(BoardCapabilities capability)
     return false;
 }
 
-QStringList Quanton::queryChannelBanks()
-{
-    return QStringList(QStringList() << "1-4" <<  "5-6" << "7" << "8");
-}
-
 
 /**
  * @brief Quanton::getSupportedProtocols
@@ -102,4 +110,29 @@ QPixmap Quanton::getBoardPicture()
 QString Quanton::getHwUAVO()
 {
     return "HwQuanton";
+}
+
+int Quanton::queryMaxGyroRate()
+{
+    ExtensionSystem::PluginManager *pm = ExtensionSystem::PluginManager::instance();
+    UAVObjectManager *uavoManager = pm->getObject<UAVObjectManager>();
+    HwQuanton *hwQuanton = HwQuanton::GetInstance(uavoManager);
+    Q_ASSERT(hwQuanton);
+    if (!hwQuanton)
+        return 0;
+
+    HwQuanton::DataFields settings = hwQuanton->getData();
+
+    switch(settings.GyroRange) {
+    case HwQuanton::GYRORANGE_250:
+        return 250;
+    case HwQuanton::GYRORANGE_500:
+        return 500;
+    case HwQuanton::GYRORANGE_1000:
+        return 1000;
+    case HwQuanton::GYRORANGE_2000:
+        return 2000;
+    default:
+        return 500;
+    }
 }

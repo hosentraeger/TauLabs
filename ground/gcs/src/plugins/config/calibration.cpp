@@ -41,6 +41,7 @@
 #include "homelocation.h"
 #include "magnetometer.h"
 #include "sensorsettings.h"
+#include "trimanglessettings.h"
 
 #include <Eigen/Core>
 #include <Eigen/Cholesky>
@@ -474,6 +475,19 @@ void Calibration::doStartOrientation() {
     connect(&timer,SIGNAL(timeout()),this,SLOT(timeout()));
 }
 
+//! Start collecting data while vehicle is level
+void Calibration::doStartBiasAndLeveling()
+{
+    zeroVertical = true;
+    doStartLeveling();
+}
+
+//! Start collecting data while vehicle is level
+void Calibration::doStartNoBiasLeveling()
+{
+    zeroVertical = false;
+    doStartLeveling();
+}
 
 /**
  * @brief Calibration::doStartLeveling Called by UI to start collecting data to calculate level
@@ -576,6 +590,7 @@ void Calibration::doStartSixPoint()
         sensorSettingsData.AccelBias[SensorSettings::ACCELBIAS_X] = 0.0;
         sensorSettingsData.AccelBias[SensorSettings::ACCELBIAS_Y] = 0.0;
         sensorSettingsData.AccelBias[SensorSettings::ACCELBIAS_Z] = 0.0;
+        sensorSettingsData.ZAccelOffset = 0.0;
     }
 
     // If calibrating the magnetometer, remove any scaling
@@ -936,7 +951,7 @@ bool Calibration::storeLevelingMeasurement(UAVObject *obj) {
 
         // Inverse rotation of sensor data, from body frame into sensor frame
         double a_body[3] = { listMean(accel_accum_x), listMean(accel_accum_y), listMean(accel_accum_z) };
-        double a_sensor[3];
+        double a_sensor[3]; //! Store the sensor data without any rotation
         double Rsb[3][3];  // The initial body-frame to sensor-frame rotation
         double rpy[3] = { attitudeSettingsData.BoardRotation[AttitudeSettings::BOARDROTATION_ROLL] * DEG2RAD / 100.0,
                           attitudeSettingsData.BoardRotation[AttitudeSettings::BOARDROTATION_PITCH] * DEG2RAD / 100.0,
@@ -957,6 +972,22 @@ bool Calibration::storeLevelingMeasurement(UAVObject *obj) {
 
         attitudeSettingsData.BoardRotation[AttitudeSettings::BOARDROTATION_ROLL] = phi * RAD2DEG * 100.0;
         attitudeSettingsData.BoardRotation[AttitudeSettings::BOARDROTATION_PITCH] = theta * RAD2DEG * 100.0;
+
+        if (zeroVertical) {
+            // If requested, calculate the offset in the z accelerometer that
+            // would make it reflect gravity
+
+            // Rotate the accel measurements to the new body frame
+            double rpy[3] = { attitudeSettingsData.BoardRotation[AttitudeSettings::BOARDROTATION_ROLL] * DEG2RAD / 100.0,
+                              attitudeSettingsData.BoardRotation[AttitudeSettings::BOARDROTATION_PITCH] * DEG2RAD / 100.0,
+                              attitudeSettingsData.BoardRotation[AttitudeSettings::BOARDROTATION_YAW] * DEG2RAD / 100.0};
+            double a_body_new[3];
+            Euler2R(rpy, Rsb);
+            rotate_vector(Rsb, a_sensor, a_body_new, false);
+
+            // Compute the new offset to make it average accelLength(GRAVITY)
+            sensorSettingsData.ZAccelOffset += -(a_body_new[2] + accelLength);
+        }
 
         // Rotate the gyro bias from the body frame into the sensor frame
         double gyro_sensor[3];
@@ -985,6 +1016,14 @@ bool Calibration::storeLevelingMeasurement(UAVObject *obj) {
         attitudeSettingsData.BiasCorrectGyro = AttitudeSettings::BIASCORRECTGYRO_TRUE;
         attitudeSettings->setData(attitudeSettingsData);
         attitudeSettings->updated();
+
+        // After recomputing the level for a frame, zero the trim settings
+        TrimAnglesSettings *trimSettings = TrimAnglesSettings::GetInstance(getObjectManager());
+        Q_ASSERT(trimSettings);
+        TrimAnglesSettings::DataFields trim = trimSettings->getData();
+        trim.Pitch = 0;
+        trim.Roll = 0;
+        trimSettings->setData(trim);
 
         // Inform the system that the calibration process has completed
         emit calibrationCompleted();

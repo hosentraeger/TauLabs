@@ -29,9 +29,12 @@
 			<elementname>EventDispatcher</elementname>
 			<elementname>GenericI2CSensor</elementname>
 			<elementname>UAVOMavlinkBridge</elementname>
+			<elementname>UAVOLighttelemetryBridge</elementname>
 			<elementname>UAVORelay</elementname>
 			<elementname>VibrationAnalysis</elementname>
 			<elementname>Battery</elementname>
+			<elementname>UAVOHoTTBridge</elementname>
+			<elementname>UAVOFrSKYSensorHubBridge</elementname>
 		</elementnames>
 	</field> 
 	<field name="Running" units="bool" type="enum">
@@ -62,9 +65,12 @@
 			<elementname>EventDispatcher</elementname>
 			<elementname>GenericI2CSensor</elementname>
 			<elementname>UAVOMavlinkBridge</elementname>
+			<elementname>UAVOLighttelemetryBridge</elementname>
 			<elementname>UAVORelay</elementname>
 			<elementname>VibrationAnalysis</elementname>
 			<elementname>Battery</elementname>
+			<elementname>UAVOHoTTBridge</elementname>
+			<elementname>UAVOFrSKYSBridge</elementname>
 		</elementnames>
 		<options>
 			<option>False</option>
@@ -99,9 +105,12 @@
 			<elementname>EventDispatcher</elementname>
 			<elementname>GenericI2CSensor</elementname>
 			<elementname>UAVOMavlinkBridge</elementname>
+			<elementname>UAVOLighttelemetryBridge</elementname>
 			<elementname>UAVORelay</elementname>
 			<elementname>VibrationAnalysis</elementname>
 			<elementname>Battery</elementname>
+			<elementname>UAVOHoTTBridge</elementname>
+			<elementname>UAVOFrSKYSensorHubBridge</elementname>
 		</elementnames>
 	</field> 
 	<access gcs="readwrite" flight="readwrite"/>

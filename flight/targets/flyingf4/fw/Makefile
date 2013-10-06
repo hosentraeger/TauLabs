@@ -33,7 +33,7 @@ DEBUG ?= NO
 
 # List of modules to include
 MODULES = Sensors
-MODULES += Attitude/revolution 
+MODULES += Attitude 
 MODULES += Actuator
 MODULES += ManualControl
 MODULES += Stabilization
@@ -51,6 +51,7 @@ OPTMODULES += Autotune
 OPTMODULES += TxPID
 OPTMODULES += VibrationAnalysis
 OPTMODULES += UAVOMavlinkBridge
+OPTMODULES += UAVOFrSKYSensorHubBridge
 OPTMODULES += Battery
 OPTMODULES += ComUsbBridge
 OPTMODULES += Airspeed/revolution
@@ -122,6 +123,7 @@ SRC += $(MATHLIB)/atmospheric_math.c
 include $(PIOS)/STM32F4xx/library_fw.mk
 
 ## PIOS Hardware (Common)
+SRC += $(PIOSCOMMON)/pios_delay.c
 SRC += $(PIOSCOMMON)/pios_mpu6050.c
 SRC += $(PIOSCOMMON)/pios_gcsrcvr.c
 SRC += $(PIOSCOMMON)/pios_hmc5883.c

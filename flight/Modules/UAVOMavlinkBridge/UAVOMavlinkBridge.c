@@ -87,6 +87,8 @@ static mavlink_message_t mavMsg;
 
 static uint8_t * serial_buf;
 
+static void updateSettings();
+
 /**
  * Initialise the module
  * \return -1 if initialisation failed
@@ -119,7 +121,7 @@ static int32_t uavoMavlinkBridgeInitialize(void) {
 			&& (module_state[MODULESETTINGS_ADMINSTATE_UAVOMAVLINKBRIDGE]
 					== MODULESETTINGS_ADMINSTATE_ENABLED)) {
 		module_enabled = true;
-		PIOS_COM_ChangeBaud(mavlink_port, 57600);
+		updateSettings();
 
 		serial_buf = pvPortMalloc(MAVLINK_MAX_PACKET_LEN);
 		stream_ticks = pvPortMalloc(MAXSTREAMS);
@@ -155,8 +157,8 @@ static void uavoMavlinkBridgeTask(void *parameters) {
 	else {
 		batSettings.Capacity = 0;
 		batSettings.NbCells = 0;
-		batSettings.SensorCalibrations[FLIGHTBATTERYSETTINGS_SENSORCALIBRATIONS_CURRENTFACTOR] = 0;
-		batSettings.SensorCalibrations[FLIGHTBATTERYSETTINGS_SENSORCALIBRATIONS_VOLTAGEFACTOR] = 0;
+		batSettings.SensorCalibrationFactor[FLIGHTBATTERYSETTINGS_SENSORCALIBRATIONFACTOR_CURRENT] = 0;
+		batSettings.SensorCalibrationFactor[FLIGHTBATTERYSETTINGS_SENSORCALIBRATIONFACTOR_VOLTAGE] = 0;
 		batSettings.SensorType[FLIGHTBATTERYSETTINGS_SENSORTYPE_BATTERYCURRENT] = FLIGHTBATTERYSETTINGS_SENSORTYPE_DISABLED;
 		batSettings.SensorType[FLIGHTBATTERYSETTINGS_SENSORTYPE_BATTERYVOLTAGE] = FLIGHTBATTERYSETTINGS_SENSORTYPE_DISABLED;
 		batSettings.Type = FLIGHTBATTERYSETTINGS_TYPE_NONE;
@@ -319,6 +321,7 @@ static void uavoMavlinkBridgeTask(void *parameters) {
 				gps_fix_type = 2;
 				break;
 			case GPSPOSITION_STATUS_FIX3D:
+			case GPSPOSITION_STATUS_DIFF3D:
 				gps_fix_type = 3;
 				break;
 			default:
@@ -473,6 +476,40 @@ static bool stream_trigger(enum MAV_DATA_STREAM stream_num) {
 	return false;
 }
 
+static void updateSettings()
+{
+	
+	if (mavlink_port) {
+		// Retrieve settings
+		uint8_t speed;
+		ModuleSettingsMavlinkSpeedGet(&speed);
+
+		// Set port speed
+		switch (speed) {
+		case MODULESETTINGS_MAVLINKSPEED_2400:
+			PIOS_COM_ChangeBaud(mavlink_port, 2400);
+			break;
+		case MODULESETTINGS_MAVLINKSPEED_4800:
+			PIOS_COM_ChangeBaud(mavlink_port, 4800);
+			break;
+		case MODULESETTINGS_MAVLINKSPEED_9600:
+			PIOS_COM_ChangeBaud(mavlink_port, 9600);
+			break;
+		case MODULESETTINGS_MAVLINKSPEED_19200:
+			PIOS_COM_ChangeBaud(mavlink_port, 19200);
+			break;
+		case MODULESETTINGS_MAVLINKSPEED_38400:
+			PIOS_COM_ChangeBaud(mavlink_port, 38400);
+			break;
+		case MODULESETTINGS_MAVLINKSPEED_57600:
+			PIOS_COM_ChangeBaud(mavlink_port, 57600);
+			break;
+		case MODULESETTINGS_MAVLINKSPEED_115200:
+			PIOS_COM_ChangeBaud(mavlink_port, 115200);
+			break;
+		}
+	}
+}
 /**
  * @}
  * @}

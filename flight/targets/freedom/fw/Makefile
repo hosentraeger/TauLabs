@@ -36,7 +36,7 @@ DEBUG ?= NO
 # @endgroup Compile Options
 # List of modules to include
 MODULES = Sensors
-MODULES += Attitude/revolution 
+MODULES += Attitude 
 MODULES += Actuator
 MODULES += ManualControl
 MODULES += Stabilization
@@ -58,6 +58,8 @@ OPTMODULES += VibrationAnalysis
 OPTMODULES += UAVOMavlinkBridge
 OPTMODULES += ComUsbBridge
 OPTMODULES += Airspeed/revolution
+OPTMODULES += UAVOHoTTBridge
+OPTMODULES += UAVOFrSKYSensorHubBridge
 
 PYMODULES = 
 #FlightPlan
@@ -153,6 +155,7 @@ SRC += $(RSCODE)/rs.c
 include $(PIOS)/STM32F4xx/library_fw.mk
 
 ## PIOS Hardware (Common)
+SRC += $(PIOSCOMMON)/pios_delay.c
 SRC += $(PIOSCOMMON)/pios_mpu6000.c
 SRC += $(PIOSCOMMON)/pios_bma180.c
 SRC += $(PIOSCOMMON)/pios_etasv3.c

@@ -63,7 +63,7 @@
 #define PIOS_MPU6000_ACCEL
 #define PIOS_INCLUDE_L3GD20
 #define PIOS_INCLUDE_MS5611
-//#define PIOS_INCLUDE_ETASV3
+#define PIOS_INCLUDE_ETASV3
 #define PIOS_INCLUDE_MPXV5004
 #define PIOS_INCLUDE_MPXV7002
 //#define PIOS_INCLUDE_HCSR04
@@ -76,6 +76,7 @@
 #define PIOS_INCLUDE_COM_AUXSBUS
 #define PIOS_INCLUDE_COM_FLEXI
 #define PIOS_INCLUDE_MAVLINK
+#define PIOS_INCLUDE_HOTT
 
 #define PIOS_INCLUDE_GPS
 #define PIOS_INCLUDE_GPS_NMEA_PARSER
@@ -103,7 +104,6 @@
 /* Flags that alter behaviors - mostly to lower resources for CC */
 #define PIOS_INCLUDE_INITCALL           /* Include init call structures */
 #define PIOS_TELEM_PRIORITY_QUEUE       /* Enable a priority queue in telemetry */
-//#define PIOS_QUATERNION_STABILIZATION   /* Stabilization options */
 
 #define CAMERASTAB_POI_MODE
 

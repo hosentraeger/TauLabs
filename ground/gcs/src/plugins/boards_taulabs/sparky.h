@@ -40,7 +40,6 @@ public:
     virtual QString shortName();
     virtual QString boardDescription();
     virtual bool queryCapabilities(BoardCapabilities capability);
-    virtual QStringList queryChannelBanks();
     virtual QStringList getSupportedProtocols();
     virtual QPixmap getBoardPicture();
     virtual QString getHwUAVO();
@@ -67,6 +66,9 @@ public:
      * @return a string with the name of the resource for this board diagram
      */
     virtual QString getConnectionDiagram() { return ":/taulabs/images/sparky-connection-diagram.svg"; }
+
+    virtual int queryMaxGyroRate();
+
 };
 
 

@@ -66,6 +66,7 @@ USE_ALTITUDE ?= NO
 USE_AUTOTUNE ?= YES
 TEST_FAULTS ?= NO
 USE_UAVOMAVLINKBRIDGE ?= YES
+USE_UAVOFRSKYSENSORHUBBRIDGE ?= YES
 USE_PCF8591 ?= NO
 ifeq ($(USE_PCF8591), YES)
 ifeq ($(USE_I2C), NO)
@@ -105,6 +106,9 @@ endif
 ifeq ($(USE_UAVOMAVLINKBRIDGE), YES)
 OPTMODULES += UAVOMavlinkBridge
 endif
+ifeq ($(USE_UAVOFRSKYSENSORHUBBRIDGE), YES)
+OPTMODULES += UAVOFrSKYSensorHubBridge
+endif
 ifeq ($(USE_BATTERY), YES)
 OPTMODULES += Battery
 endif
@@ -133,6 +137,7 @@ MATHLIBINC = $(FLIGHTLIB)/math
 PIOSINC = $(PIOS)/inc
 PIOSSTM32F10X = $(PIOS)/STM32F10x
 PIOSCOMMON = $(PIOS)/Common
+PIOSCOMMONLIB = $(PIOSCOMMON)/Libraries
 APPLIBDIR = $(PIOSSTM32F10X)/Libraries
 STMLIBDIR = $(APPLIBDIR)
 STMSPDDIR = $(STMLIBDIR)/STM32F10x_StdPeriph_Driver
@@ -181,8 +186,6 @@ else
 SRC += $(OPTESTS)/test_common.c
 SRC += $(OPTESTS)/$(TESTAPP).c
 endif
-
-
 
 ## UAVOBJECTS
 ifndef TESTAPP
@@ -238,15 +241,14 @@ SRC += $(OPUAVSYNTHDIR)/airspeedactual.c
 SRC += $(OPUAVSYNTHDIR)/sensorsettings.c
 SRC += $(OPUAVSYNTHDIR)/flightbatterystate.c
 SRC += $(OPUAVSYNTHDIR)/flightbatterysettings.c
-SRC += $(OPUAVSYNTHDIR)/adcrouting.c
 SRC += $(OPUAVSYNTHDIR)/trimanglessettings.c
 SRC += $(OPUAVSYNTHDIR)/trimangles.c
+SRC += $(OPUAVSYNTHDIR)/ubloxinfo.c
 endif
 
 ## PIOS Hardware (STM32F10x)
 SRC += $(PIOSSTM32F10X)/pios_sys.c
 SRC += $(PIOSSTM32F10X)/pios_led.c
-SRC += $(PIOSSTM32F10X)/pios_delay.c
 SRC += $(PIOSSTM32F10X)/pios_usart.c
 SRC += $(PIOSSTM32F10X)/pios_irq.c
 SRC += $(PIOSSTM32F10X)/pios_internal_adc.c
@@ -280,6 +282,7 @@ SRC += $(PIOSCOMMON)/pios_usb_desc_hid_only.c
 SRC += $(PIOSCOMMON)/pios_usb_util.c
 
 ## PIOS Hardware (Common)
+SRC += $(PIOSCOMMON)/pios_delay.c
 SRC += $(PIOSCOMMON)/pios_crc.c
 SRC += $(PIOSCOMMON)/pios_flashfs_logfs.c
 SRC += $(PIOSCOMMON)/pios_flash_jedec.c
@@ -315,7 +318,7 @@ SRC += $(MATHLIB)/misc_math.c
 SRC += $(MATHLIB)/pid.c
 
 ## CMSIS for STM32
-SRC += $(CMSISDIR)/core_cm3.c
+include $(PIOSCOMMONLIB)/CMSIS3/library.mk
 SRC += $(BOARD_INFO_DIR)/cmsis_system.c
 
 ## Used parts of the STM-Library
