@@ -141,7 +141,8 @@ TIM4  |  RC In 1  |  Servo 3  |  Servo 2  |  Servo 1
 // System Settings
 //-------------------------
 #define PIOS_SYSCLK			72000000
-#define PIOS_PERIPHERAL_CLOCK			(PIOS_SYSCLK / 2)
+#define PIOS_PERIPHERAL_APB1_CLOCK					(PIOS_SYSCLK / 2)
+#define PIOS_PERIPHERAL_APB2_CLOCK					(PIOS_SYSCLK / 1)
 
 //-------------------------
 // Interrupt Priorities
@@ -226,6 +227,8 @@ extern uintptr_t pios_ppm_rcvr_id;
 // ADCCLK = PCLK2 / 2
 #define PIOS_ADC_RATE		(72.0e6 / 1.0 / 8.0 / 252.0 / (PIOS_ADC_NUM_CHANNELS >> PIOS_ADC_USE_ADC2))
 #define PIOS_ADC_MAX_OVERSAMPLING               36
+
+#define VREF_PLUS				3.3
 
 //------------------------
 // PIOS_RCVR

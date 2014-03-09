@@ -60,7 +60,7 @@ endif
 
 # List of modules to include
 MODULES = Sensors 
-MODULES += Attitude/revolution
+MODULES += Attitude
 MODULES += ManualControl
 MODULES += Stabilization
 MODULES += Actuator
@@ -80,6 +80,7 @@ OPTMODULES += UAVOMavlinkBridge
 OPTMODULES += Battery
 OPTMODULES += VibrationAnalysis
 OPTMODULES += Airspeed/revolution
+OPTMODULES += UAVOHoTTBridge
 
 PYMODULES = 
 #FlightPlan
@@ -169,6 +170,7 @@ SRC += $(MATHLIB)/atmospheric_math.c
 include $(PIOS)/STM32F4xx/library_fw.mk
 
 ## PIOS Hardware (Common)
+SRC += $(PIOSCOMMON)/pios_delay.c
 SRC += $(PIOSCOMMON)/pios_mpu6000.c
 SRC += $(PIOSCOMMON)/pios_bma180.c
 SRC += $(PIOSCOMMON)/pios_etasv3.c

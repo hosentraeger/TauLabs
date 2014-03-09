@@ -120,6 +120,7 @@ TIM8  |           |           |           |
 #define PIOS_I2C_MAX_DEVS				2
 extern uint32_t pios_i2c_external_id;
 #define PIOS_I2C_MAIN_ADAPTER			(pios_i2c_external_id)	//this is dirty and should be removed in favor a cleaner sensor api
+#define PIOS_I2C_ETASV3_ADAPTER			(PIOS_I2C_MAIN_ADAPTER)
 
 //-------------------------
 // PIOS_COM
@@ -132,6 +133,9 @@ extern uintptr_t pios_com_telem_usb_id;
 extern uintptr_t pios_com_bridge_id;
 extern uintptr_t pios_com_vcp_id;
 extern uintptr_t pios_com_mavlink_id;
+extern uintptr_t pios_com_hott_id;
+extern uintptr_t pios_com_frsky_sensor_hub_id;
+extern uintptr_t pios_com_lighttelemetry_id;
 
 #define PIOS_COM_GPS                    (pios_com_gps_id)
 #define PIOS_COM_TELEM_USB              (pios_com_telem_usb_id)
@@ -139,6 +143,9 @@ extern uintptr_t pios_com_mavlink_id;
 #define PIOS_COM_BRIDGE                 (pios_com_bridge_id)
 #define PIOS_COM_VCP                    (pios_com_vcp_id)
 #define PIOS_COM_MAVLINK                (pios_com_mavlink_id)
+#define PIOS_COM_HOTT                   (pios_com_hott_id)
+#define PIOS_COM_FRSKY_SENSOR_HUB       (pios_com_frsky_sensor_hub_id)
+#define PIOS_COM_LIGHTTELEMETRY         (pios_com_lighttelemetry_id)
 
 #if defined(PIOS_INCLUDE_DEBUG_CONSOLE)
 extern uintptr_t pios_com_debug_id;
@@ -226,6 +233,8 @@ extern uintptr_t pios_com_debug_id;
 #define PIOS_INTERNAL_ADC_COUNT                         4
 #define PIOS_INTERNAL_ADC_MAPPING                { ADC1, ADC2, ADC3, ADC4 }
 #define PIOS_INTERNAL_ADC_MAX_INSTANCES                 4
+
+#define VREF_PLUS					3.0f
 
 //-------------------------
 // USB

@@ -32,7 +32,7 @@ DEBUG ?= NO
 
 # List of modules to include
 MODULES = Sensors
-MODULES += Attitude/revolution
+MODULES += Attitude
 MODULES += Actuator
 MODULES += ManualControl
 MODULES += Stabilization
@@ -50,10 +50,13 @@ OPTMODULES += VtolPathFollower
 OPTMODULES += FixedWingPathFollower
 OPTMODULES += VibrationAnalysis
 OPTMODULES += UAVOMavlinkBridge
+OPTMODULES += UAVOLighttelemetryBridge 
 OPTMODULES += Battery
 OPTMODULES += ComUsbBridge
 OPTMODULES += UAVORelay
 OPTMODULES += Airspeed/revolution
+OPTMODULES += UAVOHoTTBridge
+OPTMODULES += UAVOFrSKYSensorHubBridge
 
 # Paths
 OPUAVTALKINC = $(OPUAVTALK)/inc
@@ -118,6 +121,7 @@ SRC += $(MATHLIB)/atmospheric_math.c
 include $(PIOS)/STM32F30x/library_fw.mk
 
 ## PIOS Hardware (Common)
+SRC += $(PIOSCOMMON)/pios_delay.c
 SRC += $(PIOSCOMMON)/pios_mpu6050.c
 SRC += $(PIOSCOMMON)/pios_mpu9150.c
 SRC += $(PIOSCOMMON)/pios_ms5611.c

@@ -26,7 +26,11 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include <uavobjectmanager.h>
+#include "uavobjectutil/uavobjectutilmanager.h"
+#include <extensionsystem/pluginmanager.h>
 #include "revolution.h"
+#include "hwrevolution.h"
 
 /**
  * @brief Revolution::Revolution
@@ -42,6 +46,13 @@ Revolution::Revolution(void)
     setUSBInfo(board);
 
     boardType = 0x7f;
+
+    // Define the bank of channels that are connected to a given timer
+    channelBanks.resize(6);
+    channelBanks[0] = QVector<int> () << 1 << 2;
+    channelBanks[1] = QVector<int> () << 3;
+    channelBanks[2] = QVector<int> () << 4;
+    channelBanks[3] = QVector<int> () << 5 << 6;
 }
 
 Revolution::~Revolution()
@@ -78,11 +89,6 @@ bool Revolution::queryCapabilities(BoardCapabilities capability)
     return false;
 }
 
-QStringList Revolution::queryChannelBanks()
-{
-    return QStringList(QStringList() << "1-2" << "3" << "4" << "5-6");
-}
-
 /**
  * @brief Revolution::getSupportedProtocols
  *  TODO: this is just a stub, we'll need to extend this a lot with multi protocol support
@@ -102,4 +108,29 @@ QPixmap Revolution::getBoardPicture()
 QString Revolution::getHwUAVO()
 {
     return "HwRevolution";
+}
+
+int Revolution::queryMaxGyroRate()
+{
+    ExtensionSystem::PluginManager *pm = ExtensionSystem::PluginManager::instance();
+    UAVObjectManager *uavoManager = pm->getObject<UAVObjectManager>();
+    HwRevolution *hwRevolution = HwRevolution::GetInstance(uavoManager);
+    Q_ASSERT(hwRevolution);
+    if (!hwRevolution)
+        return 0;
+
+    HwRevolution::DataFields settings = hwRevolution->getData();
+
+    switch(settings.GyroRange) {
+    case HwRevolution::GYRORANGE_250:
+        return 250;
+    case HwRevolution::GYRORANGE_500:
+        return 500;
+    case HwRevolution::GYRORANGE_1000:
+        return 1000;
+    case HwRevolution::GYRORANGE_2000:
+        return 2000;
+    default:
+        return 500;
+    }
 }

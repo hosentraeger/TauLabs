@@ -65,10 +65,13 @@ private:
 
 private slots:
     void linkToggled(bool state);
-    void reverseChannel(bool state);
+    void reverseChannel();
+    void updateSlider();
     void sendChannelTest(int value);
     void setChannelRange();
     void notifyFormChanged();
+    void updateMaxSpinboxValue(UAVObject*);
+    void onAutopilotConnect();
 };
 
 inline int OutputChannelForm::index() const

@@ -31,8 +31,6 @@ UAVOBJSRCFILENAMES += accessorydesired
 UAVOBJSRCFILENAMES += actuatorcommand
 UAVOBJSRCFILENAMES += actuatordesired
 UAVOBJSRCFILENAMES += actuatorsettings
-UAVOBJSRCFILENAMES += adcrouting
-UAVOBJSRCFILENAMES += altholdsmoothed
 UAVOBJSRCFILENAMES += attitudesettings
 UAVOBJSRCFILENAMES += insstate
 UAVOBJSRCFILENAMES += inssettings
@@ -65,6 +63,7 @@ UAVOBJSRCFILENAMES += gpssatellites
 UAVOBJSRCFILENAMES += gpstime
 UAVOBJSRCFILENAMES += gpsvelocity
 UAVOBJSRCFILENAMES += vtolpathfollowersettings
+UAVOBJSRCFILENAMES += vtolpathfollowerstatus
 UAVOBJSRCFILENAMES += homelocation
 UAVOBJSRCFILENAMES += manualcontrolcommand
 UAVOBJSRCFILENAMES += manualcontrolsettings
@@ -107,6 +106,7 @@ UAVOBJSRCFILENAMES += altitudeholdsettings
 UAVOBJSRCFILENAMES += altitudeholddesired
 UAVOBJSRCFILENAMES += waypoint
 UAVOBJSRCFILENAMES += waypointactive
+UAVOBJSRCFILENAMES += ubloxinfo
 
 UAVOBJSRCFILENAMES += txpidsettings
 

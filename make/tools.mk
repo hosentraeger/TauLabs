@@ -75,17 +75,19 @@ qt_sdk_clean:
 	$(V1) [ ! -d "$(QT_SDK_DIR)" ] || $(RM) -rf $(QT_SDK_DIR)
 
 # Set up ARM (STM32) SDK
-ARM_SDK_DIR := $(TOOLS_DIR)/gcc-arm-none-eabi-4_7-2013q1
+ARM_SDK_DIR := $(TOOLS_DIR)/gcc-arm-none-eabi-4_8-2013q4
 
 .PHONY: arm_sdk_install
-ifeq ($(UNAME), Linux)
-# Linux
-arm_sdk_install: ARM_SDK_URL  := https://launchpad.net/gcc-arm-embedded/4.7/4.7-2013-q1-update/+download/gcc-arm-none-eabi-4_7-2013q1-20130313-linux.tar.bz2
+ifdef LINUX
+  arm_sdk_install: ARM_SDK_URL  := https://launchpad.net/gcc-arm-embedded/4.8/4.8-2013-q4-major/+download/gcc-arm-none-eabi-4_8-2013q4-20131204-linux.tar.bz2
 endif
 
-ifeq ($(UNAME), Darwin)
-# Mac
-arm_sdk_install: ARM_SDK_URL  := https://launchpad.net/gcc-arm-embedded/4.7/4.7-2013-q1-update/+download/gcc-arm-none-eabi-4_7-2013q1-20130313-mac.tar.bz2
+ifdef MACOSX
+  arm_sdk_install: ARM_SDK_URL  := https://launchpad.net/gcc-arm-embedded/4.8/4.8-2013-q4-major/+download/gcc-arm-none-eabi-4_8-2013q4-20131218-mac.tar.bz2
+endif
+
+ifdef WINDOWS
+  arm_sdk_install: ARM_SDK_URL  := https://launchpad.net/gcc-arm-embedded/4.8/4.8-2013-q4-major/+download/gcc-arm-none-eabi-4_8-2013q4-20131204-win32.zip
 endif
 
 arm_sdk_install: ARM_SDK_FILE := $(notdir $(ARM_SDK_URL))
@@ -397,7 +399,7 @@ ASTYLE_BUILD_DIR := $(DL_DIR)/astyle
 
 .PHONY: astyle_install
 astyle_install: | $(DL_DIR) $(TOOLS_DIR)
-astyle_install: ASTYLE_URL := https://astyle.svn.sourceforge.net/svnroot/astyle/trunk/AStyle
+astyle_install: ASTYLE_URL := https://svn.code.sf.net/p/astyle/code/trunk/AStyle
 astyle_install: ASTYLE_REV := 376
 astyle_install: ASTYLE_OPTIONS := prefix=$(ASTYLE_DIR)
 astyle_install: astyle_clean

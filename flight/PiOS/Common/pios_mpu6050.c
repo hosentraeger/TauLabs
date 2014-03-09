@@ -283,6 +283,21 @@ void PIOS_MPU6050_SetGyroRange(enum pios_mpu60x0_range gyro_range)
 {
 	PIOS_MPU6050_SetReg(PIOS_MPU60X0_GYRO_CFG_REG, gyro_range);
 
+	switch(gyro_range) {
+	case PIOS_MPU60X0_SCALE_250_DEG:
+		PIOS_SENSORS_SetMaxGyro(250);
+		break;
+	case PIOS_MPU60X0_SCALE_500_DEG:
+		PIOS_SENSORS_SetMaxGyro(500);
+		break;
+	case PIOS_MPU60X0_SCALE_1000_DEG:
+		PIOS_SENSORS_SetMaxGyro(1000);
+		break;
+	case PIOS_MPU60X0_SCALE_2000_DEG:
+		PIOS_SENSORS_SetMaxGyro(2000);
+		break;
+	}
+
 	pios_mpu6050_dev->gyro_range = gyro_range;
 }
 
@@ -324,6 +339,26 @@ void PIOS_MPU6050_SetSampleRate(uint16_t samplerate_hz)
 		divisor = 0xff;
 
 	PIOS_MPU6050_SetReg(PIOS_MPU60X0_SMPLRT_DIV_REG, (uint8_t)divisor);
+}
+
+/**
+ * Set the MPU6050 to act as a pass-through
+ */
+void PIOS_MPU6050_SetPassThrough(bool passThrough)
+{
+	int32_t int_cfg_reg = PIOS_MPU6050_GetReg(PIOS_MPU60X0_INT_CFG_REG);
+	
+	if(passThrough)
+		PIOS_MPU6050_SetReg(PIOS_MPU60X0_INT_CFG_REG, int_cfg_reg | (1 << 1));	// Set bit1 (I2C_BYPASS_EN)
+	else
+		PIOS_MPU6050_SetReg(PIOS_MPU60X0_INT_CFG_REG, int_cfg_reg & ~(1 << 1));	// Clear bit1 (I2C_BYPASS_EN)
+		
+	int32_t user_ctrl_reg = PIOS_MPU6050_GetReg(PIOS_MPU60X0_USER_CTRL_REG);	// USER_CTRL
+	
+	if(passThrough)
+		PIOS_MPU6050_SetReg(PIOS_MPU60X0_USER_CTRL_REG, user_ctrl_reg & ~(1 << 5));	// Clear bit1 (I2C_MST_EN)
+	else
+		PIOS_MPU6050_SetReg(PIOS_MPU60X0_USER_CTRL_REG, user_ctrl_reg | (1 << 5));	// Set bit1 (I2C_MST_EN)
 }
 
 /**

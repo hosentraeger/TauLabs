@@ -89,8 +89,9 @@ TIM4  |  RC In 1  |  Servo 3  |  Servo 2  |  Servo 1
 //-------------------------
 // System Settings
 //-------------------------
-#define PIOS_SYSCLK			72000000
-#define PIOS_PERIPHERAL_CLOCK			(PIOS_SYSCLK / 2)
+#define PIOS_SYSCLK                  72000000
+#define PIOS_PERIPHERAL_APB1_CLOCK  (PIOS_SYSCLK / 2)
+#define PIOS_PERIPHERAL_APB2_CLOCK  (PIOS_SYSCLK / 1)
 
 //-------------------------
 // Interrupt Priorities
@@ -151,6 +152,11 @@ extern uintptr_t pios_com_debug_id;
 extern uintptr_t pios_com_mavlink_id;
 #define PIOS_COM_MAVLINK 				(pios_com_mavlink_id)
 
+extern uintptr_t pios_com_frsky_sensor_hub_id;
+#define PIOS_COM_FRSKY_SENSOR_HUB       (pios_com_frsky_sensor_hub_id)
+extern uintptr_t pios_com_lighttelemetry_id;
+#define PIOS_COM_LIGHTTELEMETRY         (pios_com_lighttelemetry_id)
+
 //-------------------------
 // ADC
 // PIOS_ADC_PinGet(0) = Gyro Z
@@ -209,6 +215,8 @@ extern uintptr_t pios_com_mavlink_id;
 #define PIOS_ADC_RATE		(72.0e6f / 1.0f / 8.0f / 252.0f / (PIOS_ADC_NUM_CHANNELS >> PIOS_ADC_USE_ADC2))
 #define PIOS_ADC_MAX_OVERSAMPLING               36
 #define PIOS_INTERNAL_ADC_UPDATE_RATE  25.0f
+
+#define VREF_PLUS				3.3
 //------------------------
 // PIOS_RCVR
 // See also pios_board.c

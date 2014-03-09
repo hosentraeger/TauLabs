@@ -31,7 +31,6 @@
 #ifndef PIOS_SENSOR_H
 #define PIOS_SENSOR_H
 
-#include <stdbool.h>
 #include "stdint.h"
 #include "FreeRTOS.h"
 #include "queue.h"
@@ -39,7 +38,7 @@
 //! Pios sensor structure for generic gyro data
 struct pios_sensor_gyro_data {
 	float x;
-	float y;
+	float y; 
 	float z;
 	float temperature;
 };
@@ -47,7 +46,7 @@ struct pios_sensor_gyro_data {
 //! Pios sensor structure for generic accel data
 struct pios_sensor_accel_data {
 	float x;
-	float y;
+	float y; 
 	float z;
 	float temperature;
 };
@@ -55,7 +54,7 @@ struct pios_sensor_accel_data {
 //! Pios sensor structure for generic mag data
 struct pios_sensor_mag_data {
 	float x;
-	float y;
+	float y; 
 	float z;
 };
 
@@ -66,12 +65,6 @@ struct pios_sensor_baro_data {
 	float altitude;
 };
 
-//! Pios sensor structure for generic sonar data
-struct pios_sensor_sonar_data {
-	float range;
-	bool valid_range;
-};
-
 //! The types of sensors this module supports
 enum pios_sensor_type
 {
@@ -79,7 +72,6 @@ enum pios_sensor_type
 	PIOS_SENSOR_GYRO,
 	PIOS_SENSOR_MAG,
 	PIOS_SENSOR_BARO,
-	PIOS_SENSOR_SONAR,
 	PIOS_SENSOR_LAST
 };
 
@@ -97,5 +89,11 @@ int32_t PIOS_SENSORS_Register(enum pios_sensor_type type, xQueueHandle queue);
 
 //! Get the data queue for a sensor type
 xQueueHandle PIOS_SENSORS_GetQueue(enum pios_sensor_type type);
+
+//! Set the maximum gyro rate in deg/s
+void PIOS_SENSORS_SetMaxGyro(int32_t rate);
+
+//! Get the maximum gyro rate in deg/s
+int32_t PIOS_SENSORS_GetMaxGyro();
 
 #endif /* PIOS_SENSOR_H */
