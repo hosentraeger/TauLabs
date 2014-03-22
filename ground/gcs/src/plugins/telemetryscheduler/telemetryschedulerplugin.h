@@ -1,7 +1,7 @@
 /**
  ******************************************************************************
  * @file       telemetryschedulerplugin.h
- * @author     Tau Labs, http://www.taulabls.org Copyright (C) 2013.
+ * @author     Tau Labs, http://taulabs.org Copyright (C) 2013.
  * @addtogroup Telemetry Scheduler GCS Plugins
  * @{
  * @addtogroup TelemetrySchedulerGadgetPlugin Telemetry Scheduler Gadget Plugin
@@ -33,6 +33,9 @@ class TelemetrySchedulerGadgetFactory;
 
 class TelemetrySchedulerPlugin : public ExtensionSystem::IPlugin
 {
+    Q_OBJECT
+    Q_PLUGIN_METADATA(IID "TelemetryScheduler.plugins.Config." FILE "telemetryscheduler.json")
+
 public:
     TelemetrySchedulerPlugin();
    ~TelemetrySchedulerPlugin();

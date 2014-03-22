@@ -7,7 +7,7 @@
  *
  * @file       pios_internal_adc.c
  * @author     The OpenPilot Team, http://www.openpilot.org Copyright (C) 2012.
- * @author     The Tau Labs Team, http://www.taulabls.org Copyright (C) 2013.
+ * @author     Tau Labs, http://taulabs.org, Copyright (C) 2013
  * @brief      Analog to Digital conversion routines
  * @see        The GNU Public License (GPL) Version 3
  *****************************************************************************/
@@ -41,6 +41,7 @@ static void PIOS_INTERNAL_ADC_SetQueue(uint32_t internal_adc_id, xQueueHandle da
 #endif
 static uint8_t PIOS_INTERNAL_ADC_Number_of_Channels(uint32_t internal_adc_id);
 static bool PIOS_INTERNAL_ADC_Available(uint32_t adc_id, uint32_t device_pin);
+static float PIOS_INTERNAL_ADC_LSB_Voltage(uint32_t internal_adc_id);
 
 // Private types
 enum pios_internal_adc_dev_magic {
@@ -52,6 +53,7 @@ const struct pios_adc_driver pios_internal_adc_driver = {
 		.get_pin	= PIOS_INTERNAL_ADC_PinGet,
 		.set_queue	= PIOS_INTERNAL_ADC_SetQueue,
 		.number_of_channels = PIOS_INTERNAL_ADC_Number_of_Channels,
+		.lsb_voltage 	= PIOS_INTERNAL_ADC_LSB_Voltage,
 };
 struct pios_internal_adc_dev {
 	const struct pios_internal_adc_cfg * cfg;
@@ -95,7 +97,6 @@ static bool PIOS_INTERNAL_ADC_validate(struct pios_internal_adc_dev * dev)
 	return (dev->magic == PIOS_INTERNAL_ADC_DEV_MAGIC);
 }
 
-#if defined(PIOS_INCLUDE_FREERTOS)
 /**
   * @brief Allocates an internal ADC device in memory
   * \param[out] pointer to the newly created device
@@ -107,7 +108,7 @@ static struct pios_internal_adc_dev * PIOS_INTERNAL_ADC_Allocate()
 		return NULL;
 	struct pios_internal_adc_dev * adc_dev;
 	
-	adc_dev = (struct pios_internal_adc_dev *)pvPortMalloc(sizeof(*adc_dev));
+	adc_dev = (struct pios_internal_adc_dev *)PIOS_malloc(sizeof(*adc_dev));
 	if (!adc_dev) return (NULL);
 	
 	adc_dev->magic = PIOS_INTERNAL_ADC_DEV_MAGIC;
@@ -116,9 +117,6 @@ static struct pios_internal_adc_dev * PIOS_INTERNAL_ADC_Allocate()
 
 	return(adc_dev);
 }
-#else
-#error Not implemented
-#endif
 
 /**
   * @brief Initializes an internal ADC device
@@ -396,6 +394,18 @@ static uint8_t PIOS_INTERNAL_ADC_Number_of_Channels(uint32_t internal_adc_id)
 	if(!PIOS_INTERNAL_ADC_validate(adc_dev))
 			return 0;
 	return PIOS_ADC_NUM_CHANNELS;
+}
+
+/**
+ * @brief Gets the least significant bit voltage of the ADC
+ */
+static float PIOS_INTERNAL_ADC_LSB_Voltage(uint32_t internal_adc_id)
+{
+	struct pios_internal_adc_dev * adc_dev = (struct pios_internal_adc_dev *) internal_adc_id;
+	if (!PIOS_INTERNAL_ADC_validate(adc_dev)) {
+		return 0;
+	}
+        return VREF_PLUS / (((uint32_t)1 << 12) - 1);
 }
 /** 
  * @}

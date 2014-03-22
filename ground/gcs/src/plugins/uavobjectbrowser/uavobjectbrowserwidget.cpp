@@ -33,12 +33,12 @@
 #include "ui_viewoptions.h"
 #include "uavobjectmanager.h"
 #include <QStringList>
-#include <QtGui/QHBoxLayout>
-#include <QtGui/QVBoxLayout>
-#include <QtGui/QPushButton>
-#include <QtGui/QComboBox>
+#include <QHBoxLayout>
+#include <QVBoxLayout>
+#include <QPushButton>
+#include <QComboBox>
 #include <QtCore/QDebug>
-#include <QtGui/QItemEditorFactory>
+#include <QItemEditorFactory>
 #include "extensionsystem/pluginmanager.h"
 #include <math.h>
 
@@ -292,12 +292,11 @@ void UAVObjectBrowserWidget::showMetaData(bool show)
  */
 void UAVObjectBrowserWidget::categorize(bool categorize)
 {
-    ExtensionSystem::PluginManager *pm = ExtensionSystem::PluginManager::instance();
-    Q_ASSERT(pm);
-    UAVObjectManager *objManager = pm->getObject<UAVObjectManager>();
-    Q_ASSERT(objManager);
+    // Save the pointer so we can delete it only once the
+    // treeView has been set to the new model
+    UAVObjectTreeModel* tmpModelPtr = m_model;
 
-    UAVObjectTreeModel* tmpModel = m_model;
+    // Create new model
     m_model = new UAVObjectTreeModel(0, categorize, m_viewoptions->cbScientific->isChecked());
     m_model->setRecentlyUpdatedColor(m_recentlyUpdatedColor);
     m_model->setManuallyChangedColor(m_manuallyChangedColor);
@@ -306,7 +305,12 @@ void UAVObjectBrowserWidget::categorize(bool categorize)
     treeView->setModel(m_model);
     showMetaData(m_viewoptions->cbMetaData->isChecked());
 
-    delete tmpModel;
+    // Disconnect former model signal, and replace with new one.
+    disconnect(tmpModelPtr, SIGNAL(currentChanged(QModelIndex,QModelIndex)), this, SLOT(toggleUAVOButtons(QModelIndex,QModelIndex)));
+    connect(treeView->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)), this, SLOT(toggleUAVOButtons(QModelIndex,QModelIndex)));
+
+    // Now that we're done with the old model, delete it.
+    delete tmpModelPtr;
 }
 
 
@@ -315,13 +319,12 @@ void UAVObjectBrowserWidget::categorize(bool categorize)
  * @param scientific true enable scientific notation output, false disables scientific notation output
  */
 void UAVObjectBrowserWidget::useScientificNotation(bool scientific)
-{
-    ExtensionSystem::PluginManager *pm = ExtensionSystem::PluginManager::instance();
-    Q_ASSERT(pm);
-    UAVObjectManager *objManager = pm->getObject<UAVObjectManager>();
-    Q_ASSERT(objManager);
+{;
+    // Save the pointer so we can delete it only once the
+    // treeView has been set to the new model
+    UAVObjectTreeModel* tmpModelPtr = m_model;
 
-    UAVObjectTreeModel* tmpModel = m_model;
+    // Create new model
     m_model = new UAVObjectTreeModel(0, m_viewoptions->cbCategorized->isChecked(), scientific);
     m_model->setRecentlyUpdatedColor(m_recentlyUpdatedColor);
     m_model->setManuallyChangedColor(m_manuallyChangedColor);
@@ -329,7 +332,12 @@ void UAVObjectBrowserWidget::useScientificNotation(bool scientific)
     treeView->setModel(m_model);
     showMetaData(m_viewoptions->cbMetaData->isChecked());
 
-    delete tmpModel;
+    // Disconnect former model signal, and replace with new one.
+    disconnect(tmpModelPtr, SIGNAL(currentChanged(QModelIndex,QModelIndex)), this, SLOT(toggleUAVOButtons(QModelIndex,QModelIndex)));
+    connect(treeView->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)), this, SLOT(toggleUAVOButtons(QModelIndex,QModelIndex)));
+
+    // Now that we're done with the old model, delete it.
+    delete tmpModelPtr;
 }
 
 
@@ -555,10 +563,7 @@ void UAVObjectBrowserWidget::enableUAVOBrowserButtons(bool enableState)
  */
 UAVOBrowserTreeView::UAVOBrowserTreeView(UAVObjectTreeModel *m_model_new, unsigned int updateTimerPeriod) : QTreeView(),
     m_model(m_model_new),
-    topmostData(-1),
-    bottommostData(-1),
-    topmostSettings(-1),
-    bottommostSettings(-1)
+    m_updateTreeViewFlag(false)
 {
     // Start timer at 100ms
     m_updateViewTimer.start(updateTimerPeriod);
@@ -591,25 +596,14 @@ void UAVOBrowserTreeView::updateTimerPeriod(unsigned int val)
  */
 void UAVOBrowserTreeView::onTimeout_updateView()
 {
-    if (topmostData > -1){
-        QModelIndex topLeftData = m_model->getIndex(topmostData, 0, m_model->getNonSettingsTree());
-        QModelIndex bottomRightData = m_model->getIndex(bottommostData, 1, m_model->getNonSettingsTree());
+    if (m_updateTreeViewFlag == true) {
+        QModelIndex topLeftData = m_model->getIndex(0, 0, m_model->getNonSettingsTree());
+        QModelIndex bottomRightData = m_model->getIndex(1, 1, m_model->getNonSettingsTree());
 
         QTreeView::dataChanged(topLeftData, bottomRightData);
-
-        topmostData = -1;
-        bottommostData = -1;
     }
 
-    if (topmostSettings > -1){
-        QModelIndex topLeftSettings = m_model->getIndex(topmostSettings, 0, m_model->getSettingsTree());
-        QModelIndex bottomRightSettings = m_model->getIndex(bottommostSettings, 1, m_model->getSettingsTree());
-
-        QTreeView::dataChanged(topLeftSettings, bottomRightSettings);
-
-        topmostSettings = -1;
-        bottommostSettings = -1;
-    }
+    m_updateTreeViewFlag = false;
 }
 
 /**
@@ -620,32 +614,31 @@ void UAVOBrowserTreeView::onTimeout_updateView()
  */
 void UAVOBrowserTreeView::updateView(QModelIndex topLeft, QModelIndex bottomRight)
 {
-    TopTreeItem *treeItemPtr = static_cast<TopTreeItem*>(topLeft.internalPointer());
+    Q_UNUSED(bottomRight);
 
-    // Determine if the new indices lie outside of the set of indices queued for update
-    if (treeItemPtr->parent() == m_model->getNonSettingsTree()){
-        if (topmostData < 0 || topmostData > topLeft.row())
-            topmostData = topLeft.row();
-        if (bottommostData < 0 || bottommostData < bottomRight.row())
-            bottommostData = bottomRight.row();
-    }
-    else if(treeItemPtr->parent() == m_model->getSettingsTree()){
-        if (topmostSettings < 0 || topmostSettings > topLeft.row())
-            topmostSettings = topLeft.row();
-        if (bottommostSettings < 0 || bottommostSettings < bottomRight.row())
-            bottommostSettings = bottomRight.row();
-    }
-    else{
-        // Do nothing. These QModelIndices are generated by the highlight manager or for individual
+    // First static_cast from *void to a tree item pointer. This is safe because we know all the indices are tree items
+    TreeItem *treeItemPtr = static_cast<TreeItem*>(topLeft.internalPointer());
+
+    // Second, do a dynamic_cast in order to detect if this tree item is a data object
+    DataObjectTreeItem *dataObjectTreeItemPtr = dynamic_cast<DataObjectTreeItem*>(treeItemPtr);
+
+    if (dataObjectTreeItemPtr == NULL) {
+        // Do nothing. These QModelIndices are generated by the highlight manager for individual
         // UAVO fields, which are both updated when updating that UAVO's branch of the settings or
         // dynamic data tree.
+        return;
     }
+
+    m_updateTreeViewFlag = true;
 }
 
-void UAVOBrowserTreeView::dataChanged(const QModelIndex & topLeft, const QModelIndex & bottomRight)
+void UAVOBrowserTreeView::dataChanged(const QModelIndex & topLeft, const QModelIndex & bottomRight,
+                                      const QVector<int> & roles)
 {
+    Q_UNUSED(roles);
+
     // If the timer is active, then throttle updates...
-    if (m_updateViewTimer.isActive()){
+    if (m_updateViewTimer.isActive()) {
         updateView(topLeft, bottomRight);
     }
     else { // ... otherwise pass them directly on to the treeview.

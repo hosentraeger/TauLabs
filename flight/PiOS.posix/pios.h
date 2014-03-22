@@ -3,6 +3,7 @@
  *
  * @file       pios.h  
  * @author     The OpenPilot Team, http://www.openpilot.org Copyright (C) 2010.
+ * @author     Tau Labs, http://taulabs.org, Copyright (C) 2013
  * @brief      Main PiOS header. 
  *                 - Central header for the project.
  * @see        The GNU Public License (GPL) Version 3
@@ -57,6 +58,7 @@
 #include "pios_board_sim.h"
 
 /* PIOS Hardware Includes (posix) */
+#include <pios_heap.h>
 #include <pios_sys.h>
 #include <pios_delay.h>
 #include <pios_led.h>
@@ -81,5 +83,10 @@
 #endif
 
 #define NELEMENTS(x) (sizeof(x) / sizeof(*(x)))
+
+// portTICK_RATE_MS is in [ms/tick].
+// See http://sourceforge.net/tracker/?func=detail&aid=3498382&group_id=111543&atid=659636
+#define TICKS2MS(t)	((t) * (portTICK_RATE_MS))
+#define MS2TICKS(m)	((m) / (portTICK_RATE_MS))
 
 #endif /* PIOS_H */

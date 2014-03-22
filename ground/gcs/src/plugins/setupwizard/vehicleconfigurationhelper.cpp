@@ -41,6 +41,7 @@
 
 const qint16 VehicleConfigurationHelper::LEGACY_ESC_FREQUENCE = 50;
 const qint16 VehicleConfigurationHelper::RAPID_ESC_FREQUENCE  = 400;
+const float VehicleConfigurationHelper::DEFAULT_ENABLED_ACCEL_TAU = 0.1;
 
 VehicleConfigurationHelper::VehicleConfigurationHelper(VehicleConfigurationSource *configSource)
     : m_configSource(configSource), m_uavoManager(0),
@@ -374,6 +375,10 @@ void VehicleConfigurationHelper::applyManualControlDefaults()
     case Core::IBoardType::INPUT_TYPE_DSM2:
         channelType = ManualControlSettings::CHANNELGROUPS_DSMMAINPORT;
         break;
+    case Core::IBoardType::INPUT_TYPE_HOTTSUMD:
+    case Core::IBoardType::INPUT_TYPE_HOTTSUMH:
+        channelType = ManualControlSettings::CHANNELGROUPS_HOTTSUM;
+        break;
     default:
         break;
     }
@@ -613,9 +618,6 @@ GUIConfigDataUnion VehicleConfigurationHelper::getGUIConfigData()
 {
     GUIConfigDataUnion configData;
 
-    SystemSettings *systemSettings = SystemSettings::GetInstance(m_uavoManager);
-    Q_ASSERT(systemSettings);
-
     for (int i = 0; i < (int)(SystemSettings::AIRFRAMECATEGORYSPECIFICCONFIGURATION_NUMELEM); i++) {
         configData.UAVObject[i] = 0; // systemSettingsData.GUIConfigData[i];
     }
@@ -627,7 +629,7 @@ void VehicleConfigurationHelper::setupQuadCopter()
 {
     mixerChannelSettings channels[10];
     GUIConfigDataUnion guiSettings = getGUIConfigData();
-    SystemSettings::AirframeTypeOptions frame;
+    SystemSettings::AirframeTypeOptions frame = SystemSettings::AIRFRAMETYPE_QUADP;
 
     switch (m_configSource->getVehicleSubType()) {
     case VehicleConfigurationSource::MULTI_ROTOR_QUAD_PLUS:
@@ -717,7 +719,7 @@ void VehicleConfigurationHelper::setupHexaCopter()
 {
     mixerChannelSettings channels[10];
     GUIConfigDataUnion guiSettings = getGUIConfigData();
-    SystemSettings::AirframeTypeOptions frame;
+    SystemSettings::AirframeTypeOptions frame = SystemSettings::AIRFRAMETYPE_HEXA;
 
     switch (m_configSource->getVehicleSubType()) {
     case VehicleConfigurationSource::MULTI_ROTOR_HEXA:
@@ -896,7 +898,7 @@ void VehicleConfigurationHelper::setupOctoCopter()
 {
     mixerChannelSettings channels[10];
     GUIConfigDataUnion guiSettings = getGUIConfigData();
-    SystemSettings::AirframeTypeOptions frame;
+    SystemSettings::AirframeTypeOptions frame = SystemSettings::AIRFRAMETYPE_OCTO;
 
     switch (m_configSource->getVehicleSubType()) {
     case VehicleConfigurationSource::MULTI_ROTOR_OCTO:

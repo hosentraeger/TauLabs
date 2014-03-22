@@ -29,7 +29,6 @@
 
 
 #include "simulator.h"
-#include "qxtlogger.h"
 #include "extensionsystem/pluginmanager.h"
 #include "coreplugin/icore.h"
 #include "coreplugin/threadmanager.h"
@@ -184,11 +183,6 @@ void Simulator::onStart()
                        "inputPort: " + QString::number(settings.inPort) + "\n" + \
                        "outputPort: " + QString::number(settings.outPort) + "\n");
 
-    qxtLog->info("\nLocal interface: " + settings.hostAddress + "\n" + \
-                 "Remote interface: " + settings.remoteAddress + "\n" + \
-                 "inputPort: " + QString::number(settings.inPort) + "\n" + \
-                 "outputPort: " + QString::number(settings.outPort) + "\n");
-
 	connect(inSocket, SIGNAL(readyRead()), this, SLOT(receiveUpdate()),Qt::DirectConnection);
 
 	// Setup transmit timer
@@ -247,7 +241,7 @@ void Simulator::setupUAVObjects()
         originalMetaData = utilMngr->readAllNonSettingsMetadata();
     }
 
-    uint16_t slowUpdate = 5000; // in [ms]
+    quint16 slowUpdate = 5000; // in [ms]
 
     // Iterate over list of UAVObjects, setting all dynamic data metadata objects to slow update rate.
     UAVObjectManager *objManager = getObjectManager();

@@ -78,7 +78,7 @@ static struct mpu6000_dev *PIOS_MPU6000_alloc(void)
 {
 	struct mpu6000_dev *mpu6000_dev;
 
-	mpu6000_dev = (struct mpu6000_dev *)pvPortMalloc(sizeof(*mpu6000_dev));
+	mpu6000_dev = (struct mpu6000_dev *)PIOS_malloc(sizeof(*mpu6000_dev));
 
 	if (!mpu6000_dev) return (NULL);
 
@@ -139,9 +139,9 @@ int32_t PIOS_MPU6000_Init(uint32_t spi_id, uint32_t slave_num, const struct pios
 	pios_mpu6000_dev->cfg = cfg;
 
 	/* Configure the MPU6000 Sensor */
-	PIOS_SPI_SetClockSpeed(pios_mpu6000_dev->spi_id, PIOS_SPI_PRESCALER_256);
+	PIOS_SPI_SetClockSpeed(pios_mpu6000_dev->spi_id, 100000);
 	PIOS_MPU6000_Config(cfg);
-	PIOS_SPI_SetClockSpeed(pios_mpu6000_dev->spi_id, PIOS_SPI_PRESCALER_16);
+	PIOS_SPI_SetClockSpeed(pios_mpu6000_dev->spi_id, 3000000);
 
 	/* Set up EXTI line */
 	PIOS_EXTI_Init(cfg->exti_cfg);
@@ -276,6 +276,21 @@ static void PIOS_MPU6000_Config(const struct pios_mpu60x0_cfg *cfg)
 void PIOS_MPU6000_SetGyroRange(enum pios_mpu60x0_range gyro_range)
 {
 	PIOS_MPU6000_SetReg(PIOS_MPU60X0_GYRO_CFG_REG, gyro_range);
+
+	switch(gyro_range) {
+	case PIOS_MPU60X0_SCALE_250_DEG:
+		PIOS_SENSORS_SetMaxGyro(250);
+		break;
+	case PIOS_MPU60X0_SCALE_500_DEG:
+		PIOS_SENSORS_SetMaxGyro(500);
+		break;
+	case PIOS_MPU60X0_SCALE_1000_DEG:
+		PIOS_SENSORS_SetMaxGyro(1000);
+		break;
+	case PIOS_MPU60X0_SCALE_2000_DEG:
+		PIOS_SENSORS_SetMaxGyro(2000);
+		break;
+	}
 
 	pios_mpu6000_dev->gyro_range = gyro_range;
 }

@@ -101,7 +101,14 @@ public:
      * @return list of channel bank names
      *
      */
-    virtual QStringList queryChannelBanks() { return QStringList(); }
+    virtual QStringList queryChannelBanks();
+
+    /**
+     * @brief Get banks of output PWM channels banks on the board
+     * @return matrix of channel bank names
+     *
+     */
+    virtual QVector< QVector<int> > getChannelBanks(){return channelBanks;}
 
     /**
      * @brief getBoardPicture
@@ -155,6 +162,8 @@ public:
         INPUT_TYPE_DSMX10BIT,
         INPUT_TYPE_DSMX11BIT,
         INPUT_TYPE_SBUS,
+        INPUT_TYPE_HOTTSUMD,
+        INPUT_TYPE_HOTTSUMH,
         INPUT_TYPE_UNKNOWN
     };
 
@@ -182,6 +191,13 @@ public:
      */
     virtual QString getConnectionDiagram() { return ""; }
 
+    /**
+     * @brief Query the board for the currently set max rate of the gyro
+     * @return max rate of gyro
+     *
+     */
+    virtual int queryMaxGyroRate() { return -1; }
+
 signals:
 
 protected:
@@ -193,7 +209,11 @@ protected:
     bool dfuSupport;
 
     //! The numerical board type ID
-    int boardType;
+    qint32 boardType;
+
+    //! The channel groups that are driven by timers
+    QVector< QVector<qint32> > channelBanks;
+
 };
 
 } //namespace Core

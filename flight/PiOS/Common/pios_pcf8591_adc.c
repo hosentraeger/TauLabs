@@ -49,6 +49,7 @@ static bool PIOS_PCF8591_ADC_Available(uint32_t adc_id, uint32_t device_pin);
 static struct pios_pcf8591_adc_dev * PIOS_PCF8591_ADC_Allocate(void);
 static uint8_t PIOS_PCF8591_ADC_Number_of_Channels(uint32_t internal_adc_id);
 static bool PIOS_PCF8591_ADC_validate(struct pios_pcf8591_adc_dev *);
+static float PIOS_INTERNAL_ADC_LSB_Voltage(uint32_t);
 
 // Private types
 enum pios_pcf8591_adc_dev_magic {
@@ -59,6 +60,7 @@ const struct pios_adc_driver pios_pcf8591_adc_driver = {
         .available = PIOS_PCF8591_ADC_Available,
         .get_pin = PIOS_PCF8591_ADC_DevicePinGet,
         .number_of_channels = PIOS_PCF8591_ADC_Number_of_Channels,
+        .full_range_value = PIOS_INTERNAL_ADC_LSB_Voltage,
 };
 
 struct pios_pcf8591_adc_dev {
@@ -155,7 +157,6 @@ int32_t PIOS_PCF8591_ADC_Init(uint32_t *pcf8591_adc_id, const struct pios_pcf859
         return 0;
 }
 
-#if defined(PIOS_INCLUDE_FREERTOS)
 /**
  * @brief Allocates an internal ADC device in memory
  * \param[out] pointer to the newly created device
@@ -165,14 +166,12 @@ static struct pios_pcf8591_adc_dev * PIOS_PCF8591_ADC_Allocate()
 {
         struct pios_pcf8591_adc_dev *adc_dev;
 
-        adc_dev = (struct pios_pcf8591_adc_dev *)pvPortMalloc(sizeof(*adc_dev));
+        adc_dev = (struct pios_pcf8591_adc_dev *)PIOS_malloc(sizeof(*adc_dev));
         if (!adc_dev) return (NULL);
         adc_dev->magic = PIOS_PCF8591_ADC_DEV_MAGIC;
         return(adc_dev);
 }
-#else
-#error Not implemented
-#endif
+
 /**
  * @brief Checks the number of available ADC channels on the device
  * \param[in] adc_id handle of the device
@@ -187,6 +186,17 @@ static uint8_t PIOS_PCF8591_ADC_Number_of_Channels(uint32_t adc_id)
         return NELEMENTS(ADC_CHANNEL);
 }
 
+/**
+ * @brief Gets the least significant bit voltage of the ADC
+ */
+static float PIOS_INTERNAL_ADC_LSB_Voltage(uint32_t internal_adc_id)
+{
+        struct pios_pcf8591_adc_dev *adc_dev = (struct pios_pcf8591_adc_dev *)adc_id;
+        if(!PIOS_PCF8591_ADC_validate(adc_dev)) {
+                return 0;
+        }
+        return VREF_PLUS / (((uint32_t)1 << 8) - 1);
+}
 #endif
 
 /**

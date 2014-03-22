@@ -1,7 +1,7 @@
 /**
  ******************************************************************************
  * @file       vehicletrim.cpp
- * @author     Tau Labs, http://www.taulabs.org, Copyright (C) 2013
+ * @author     Tau Labs, http://taulabs.org, Copyright (C) 2013-2014
  * @brief      Gui-less support class for vehicle trimming
  *****************************************************************************/
 /*
@@ -41,11 +41,11 @@ VehicleTrim::~VehicleTrim()
 
 
 /**
- * @brief VehicleTrim::setFixedWingTrimAutopilotBias Takes the desired pitch and sets that as the
- * autopilot level bias.
+ * @brief VehicleTrim::setFixedWingTrimAutopilotBias Takes the desired roll and pitch,
+ * and sets that as the autopilot level bias.
  * @return success state
  */
-VehicleTrim::autopilotLevelBiasMessages VehicleTrim::setFixedWingTrimAutopilotBias()
+VehicleTrim::autopilotLevelBiasMessages VehicleTrim::setAutopilotBias()
 {
     SystemAlarms *systemAlarms = SystemAlarms::GetInstance(getObjectManager());
     FlightStatus *flightStatus = FlightStatus::GetInstance(getObjectManager());
@@ -73,18 +73,14 @@ VehicleTrim::autopilotLevelBiasMessages VehicleTrim::setFixedWingTrimAutopilotBi
     }
 
     // Check that pitch and roll axes are in attitude mode
-    if (stabilizationDesired->getStabilizationMode_Pitch() != StabilizationDesired::STABILIZATIONMODE_ATTITUDE ||
-            stabilizationDesired->getStabilizationMode_Roll() != StabilizationDesired::STABILIZATIONMODE_ATTITUDE){
+    if ((stabilizationDesired->getStabilizationMode_Pitch() != StabilizationDesired::STABILIZATIONMODE_ATTITUDE) ||
+            (stabilizationDesired->getStabilizationMode_Roll() != StabilizationDesired::STABILIZATIONMODE_ATTITUDE)) {
         return AUTOPILOT_LEVEL_FAILED_DUE_TO_STABILIZATIONMODE;
     }
 
-    // Copy the current pitch and roll settings to the trim pitch and roll
-    // TODO: Use averaged pitch desired data in order to ensure that 1) spurious
-    // data doesn't creep in and 2) the user is not actively moving the TX stick
-    trimAnglesSettingsData.Roll = stabilizationDesired->getRoll();
-    trimAnglesSettingsData.Pitch = stabilizationDesired->getPitch();
-
-    // Set the data to the UAVO, and inform the flight controller that the UAVO has been updated
+    // Increment the current pitch and roll settings by what the pilot is requesting
+    trimAnglesSettingsData.Roll += stabilizationDesired->getRoll();
+    trimAnglesSettingsData.Pitch += stabilizationDesired->getPitch();
     trimAnglesSettings->setData(trimAnglesSettingsData);
     trimAnglesSettings->updated();
 
@@ -100,7 +96,7 @@ VehicleTrim::autopilotLevelBiasMessages VehicleTrim::setFixedWingTrimAutopilotBi
  * these values as the neutral points.
  * @return success state
  */
-VehicleTrim::actuatorTrimMessages VehicleTrim::setFixedWingTrimActuators()
+VehicleTrim::actuatorTrimMessages VehicleTrim::setTrimActuators()
 {
     SystemAlarms *systemAlarms = SystemAlarms::GetInstance(getObjectManager());
     FlightStatus *flightStatus = FlightStatus::GetInstance(getObjectManager());

@@ -35,11 +35,9 @@
 #include "uavobjectmanager.h"
 #include "uavobject.h"
 #include <QList>
-#include <QtGui/QWidget>
+#include <QWidget>
 #include <QTimer>
 #include <QMutex>
-#include "modulesettingsform.h"
-
 
 class Ui_Widget;
 

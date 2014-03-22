@@ -23,6 +23,7 @@
 
 package org.taulabs.androidgcs;
 
+import org.taulabs.androidgcs.drawer.NavDrawerActivityConfiguration;
 import org.taulabs.androidgcs.util.SmartSave;
 import org.taulabs.androidgcs.views.ScrollBarView;
 import org.taulabs.uavtalk.UAVDataObject;
@@ -42,19 +43,30 @@ public class TuningActivity extends ObjectManagerActivity {
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		setContentView(R.layout.tuning);
 		getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
+
+		super.onCreate(savedInstanceState);
 	}
-
+	
 	@Override
-	void onOPConnected() {
-		super.onOPConnected();
+	protected NavDrawerActivityConfiguration getNavDrawerConfiguration() {
+		NavDrawerActivityConfiguration navDrawer = getDefaultNavDrawerConfiguration();
+		navDrawer.setMainLayout(R.layout.tuning);
+		return navDrawer;
+	}
+	
+	@Override
+	void onConnected() {
+		super.onConnected();
 
-		if (DEBUG) Log.d(TAG, "onOPConnected()");
+		if (DEBUG) Log.d(TAG, "onConnected()");
 
 		// Subscribe to updates from ManualControlCommand and show the values for crude feedback
 		UAVDataObject stabilizationSettings = (UAVDataObject) objMngr.getObject("StabilizationSettings");
+		
+		// Stabilization settings not found so tuning will not work
+		if (stabilizationSettings == null)
+			return;
 
 		smartSave = new SmartSave(objMngr, this,
 				stabilizationSettings,
@@ -70,6 +82,7 @@ public class TuningActivity extends ObjectManagerActivity {
 		smartSave.addControlMapping((ScrollBarView) findViewById(R.id.pitchKp), "PitchPI", 0);
 		smartSave.addControlMapping((ScrollBarView) findViewById(R.id.rollRateKd), "RollRatePID", 2);
 		smartSave.addControlMapping((ScrollBarView) findViewById(R.id.pitchRateKd), "PitchRatePID", 2);
+		smartSave.fetchSettings(); // Robustly request an update of the settings
 		smartSave.refreshSettingsDisplay();
 	}
 

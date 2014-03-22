@@ -3,7 +3,7 @@ TEMPLATE = lib
 TARGET = OPMapGadget
 include(../../taulabsgcsplugin.pri)
 include(../../plugins/coreplugin/coreplugin.pri)
-include(../../libs/opmapcontrol/opmapcontrol.pri)
+include(../../libs/tlmapcontrol/tlmapcontrol.pri)
 include(../../plugins/uavobjects/uavobjects.pri)
 include(../../plugins/uavobjectutil/uavobjectutil.pri)
 include(../../plugins/uavtalk/uavtalk.pri)
@@ -32,7 +32,8 @@ SOURCES += opmapplugin.cpp \
     modelmapproxy.cpp \
     homeeditor.cpp
 
-OTHER_FILES += OPMapGadget.pluginspec
+OTHER_FILES += OPMapGadget.pluginspec \
+    OPMapGadget.json
 
 FORMS += opmapgadgetoptionspage.ui \
     opmap_widget.ui \

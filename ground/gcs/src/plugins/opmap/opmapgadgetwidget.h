@@ -34,8 +34,8 @@
 
 #include "modelmapproxy.h"
 
-#include <QtGui/QWidget>
-#include <QtGui/QMenu>
+#include <QWidget>
+#include <QMenu>
 #include <QStringList>
 #include <QStandardItemModel>
 #include <QList>
@@ -43,7 +43,7 @@
 #include <QMutexLocker>
 #include <QPointF>
 
-#include "opmapcontrol/opmapcontrol.h"
+#include "tlmapcontrol/tlmapcontrol.h"
 
 #include "opmap_zoom_slider_widget.h"
 #include "opmap_statusbar_widget.h"
@@ -120,8 +120,8 @@ public:
     void setUserImageLocation(QString userImageLocation);
     void setUserImageHorizontalScale(double userImageHorizontalScale);
     void setUserImageVerticalScale(double userImageVerticalScale);
-
     bool getGPSPosition(double &latitude, double &longitude, double &altitude);
+    void setGeoCodingLanguage(QString language);
 signals:
     void defaultLocationAndZoomChanged(double lng,double lat,double zoom);
     void overlayOpacityChanged(qreal);
@@ -238,7 +238,7 @@ private:
     QTimer *m_updateTimer;
     QTimer *m_statusUpdateTimer;
     Ui::OPMap_Widget *m_widget;
-    mapcontrol::OPMapWidget *m_map;
+    mapcontrol::TLMapWidget *m_map;
 	ExtensionSystem::PluginManager *pm;
 	UAVObjectManager *obm;
 	UAVObjectUtilManager *obum;
@@ -322,7 +322,6 @@ private:
     void setMapFollowingMode();
 
 	bool setHomeLocationObject();
-    QMenu contextMenu;
     internals::PointLatLng lastLatLngMouse;
     WayPointItem * magicWayPoint;
 

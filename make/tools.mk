@@ -22,34 +22,34 @@ ifdef OPENOCD_FTDI
 endif
 
 # Set up QT toolchain
-QT_SDK_DIR := $(TOOLS_DIR)/qtsdk-v1.2.1
-QT_SDK_QMAKE_PATH := $(QT_SDK_DIR)/Desktop/Qt/4.8.1/gcc/bin/qmake
+QT_SDK_DIR := $(TOOLS_DIR)/Qt5.2.1
 
 # Build openocd without FTDI (yes | no)
 OPENOCD_FTDI ?= yes
 
 .PHONY: qt_sdk_install
 
-ifeq ($(UNAME), Linux)
-
-# Choose the appropriate installer based on host architecture
-ifneq (,$(filter $(ARCH), x86_64 amd64))
-# Linux 64-bit
-qt_sdk_install: QT_SDK_URL  := http://jenkins.taulabs.org/distfiles/QtSdk-offline-linux-x86_64-v1.2.1.run
-else
-# Linux 32-bit
-qt_sdk_install: QT_SDK_URL  := http://jenkins.taulabs.org/distfiles/QtSdk-offline-linux-x86-v1.2.1.run
-
+# QT SDK download URL
+ifdef LINUX
+  ifdef AMD64
+    # Linux 64-bit
+    qt_sdk_install: QT_SDK_URL := http://download.qt-project.org/official_releases/qt/5.2/5.2.1/qt-opensource-linux-x64-5.2.1.run
+    QT_SDK_QMAKE_PATH := $(QT_SDK_DIR)/5.2.1/gcc_64/bin/qmake
+  else
+    # Linux 32-bit
+    qt_sdk_install: QT_SDK_URL := http://download.qt-project.org/official_releases/qt/5.2/5.2.1/qt-opensource-linux-x86-5.2.1.run
+    QT_SDK_QMAKE_PATH := $(QT_SDK_DIR)/5.2.1/gcc/bin/qmake
+  endif
 endif
 
-else ifeq ($(UNAME), Darwin)
+ifdef MACOSX
+  qt_sdk_install: QT_SDK_URL  := http://download.qt-project.org/official_releases/qt/5.2/5.2.1/qt-opensource-mac-x64-clang-5.2.1.dmg
+  QT_SDK_QMAKE_PATH := $(QT_SDK_DIR)/5.2.1/clang_64/bin/qmake
+endif
 
-qt_sdk_install: QT_SDK_URL  := http://jenkins.taulabs.org/distfiles/QtSdk-offline-mac-x86-v1.2.1.dmg
-
-else ifeq ($(UNAME), MINGW32_NT-6.1) # Windows 7
-
-qt_sdk_install: QT_SDK_URL  := http://jenkins.taulabs.org/distfiles/QtSdk-offline-win-x86-v1.2.1.exe
-
+ifdef WINDOWS
+  qt_sdk_install: QT_SDK_URL  := http://download.qt-project.org/official_releases/qt/5.2/5.2.1/qt-opensource-windows-x86-mingw48_opengl-5.2.1.exe
+  QT_SDK_QMAKE_PATH := $(QT_SDK_DIR)/5.2.1/mingw48_32/bin/qmake
 endif
 
 qt_sdk_install: QT_SDK_FILE := $(notdir $(QT_SDK_URL))
@@ -58,7 +58,7 @@ qt_sdk_install: QT_SDK_FILE := $(notdir $(QT_SDK_URL))
 qt_sdk_install : | $(DL_DIR) $(TOOLS_DIR)
 qt_sdk_install: qt_sdk_clean
         # download the source only if it's newer than what we already have
-	$(V1) wget -N --content-disposition -P "$(DL_DIR)" "$(QT_SDK_URL)"
+	$(V1) wget -N -P "$(DL_DIR)" "$(QT_SDK_URL)"
         # tell the user exactly which path they should select in the GUI
 	$(V1) echo "*** NOTE NOTE NOTE ***"
 	$(V1) echo "*"
@@ -67,10 +67,20 @@ qt_sdk_install: qt_sdk_clean
 	$(V1) echo "*"
 	$(V1) echo "*** NOTE NOTE NOTE ***"
 
+ifneq (,$(filter $(UNAME), Darwin))
+	$(V1) hdiutil attach -quiet -private -mountpoint /tmp/qt-installer "$(DL_DIR)/$(QT_SDK_FILE)" 
+	$(V1) /tmp/qt-installer/qt-opensource-mac-x64-clang-5.2.1.app/Contents/MacOS/qt-opensource-mac-x64-clang-5.2.1
+	$(V1) hdiutil detach -quiet /tmp/qt-installer
+endif
+ 
 ifneq (,$(filter $(UNAME), Linux))
         #installer is an executable, make it executable and run it
 	$(V1) chmod u+x "$(DL_DIR)/$(QT_SDK_FILE)"
 	$(V1) "$(DL_DIR)/$(QT_SDK_FILE)" -style cleanlooks
+endif
+
+ifdef WINDOWS
+	$(V1) ./downloads/qt-opensource-windows-x86-mingw48_opengl-5.2.1.exe
 endif
 
 .PHONY: qt_sdk_clean
@@ -78,17 +88,19 @@ qt_sdk_clean:
 	$(V1) [ ! -d "$(QT_SDK_DIR)" ] || $(RM) -rf $(QT_SDK_DIR)
 
 # Set up ARM (STM32) SDK
-ARM_SDK_DIR := $(TOOLS_DIR)/gcc-arm-none-eabi-4_7-2013q1
+ARM_SDK_DIR := $(TOOLS_DIR)/gcc-arm-none-eabi-4_8-2013q4
 
 .PHONY: arm_sdk_install
-ifeq ($(UNAME), Linux)
-# Linux
-arm_sdk_install: ARM_SDK_URL  := https://launchpad.net/gcc-arm-embedded/4.7/4.7-2013-q1-update/+download/gcc-arm-none-eabi-4_7-2013q1-20130313-linux.tar.bz2
+ifdef LINUX
+  arm_sdk_install: ARM_SDK_URL  := https://launchpad.net/gcc-arm-embedded/4.8/4.8-2013-q4-major/+download/gcc-arm-none-eabi-4_8-2013q4-20131204-linux.tar.bz2
 endif
 
-ifeq ($(UNAME), Darwin)
-# Mac
-arm_sdk_install: ARM_SDK_URL  := https://launchpad.net/gcc-arm-embedded/4.7/4.7-2013-q1-update/+download/gcc-arm-none-eabi-4_7-2013q1-20130313-mac.tar.bz2
+ifdef MACOSX
+  arm_sdk_install: ARM_SDK_URL  := https://launchpad.net/gcc-arm-embedded/4.8/4.8-2013-q4-major/+download/gcc-arm-none-eabi-4_8-2013q4-20131218-mac.tar.bz2
+endif
+
+ifdef WINDOWS
+  arm_sdk_install: ARM_SDK_URL  := https://launchpad.net/gcc-arm-embedded/4.8/4.8-2013-q4-major/+download/gcc-arm-none-eabi-4_8-2013q4-20131204-win32.zip
 endif
 
 arm_sdk_install: ARM_SDK_FILE := $(notdir $(ARM_SDK_URL))
@@ -104,50 +116,6 @@ arm_sdk_install: arm_sdk_clean
 .PHONY: arm_sdk_clean
 arm_sdk_clean:
 	$(V1) [ ! -d "$(ARM_SDK_DIR)" ] || $(RM) -r $(ARM_SDK_DIR)
-
-# Set up openocd tools
-OPENOCD_DIR       := $(TOOLS_DIR)/openocd
-OPENOCD_WIN_DIR   := $(TOOLS_DIR)/openocd_win
-OPENOCD_BUILD_DIR := $(DL_DIR)/openocd-build
-
-.PHONY: openocd_install
-openocd_install: | $(DL_DIR) $(TOOLS_DIR)
-openocd_install: OPENOCD_URL  := http://sourceforge.net/projects/openocd/files/openocd/0.6.1/openocd-0.6.1.tar.bz2/download
-openocd_install: OPENOCD_FILE := openocd-0.6.1.tar.bz2
-openocd_install: OPENOCD_OPTIONS := --prefix="$(OPENOCD_DIR)" --enable-stlink
-
-ifeq ($(OPENOCD_FTDI), yes)
-openocd_install: OPENOCD_OPTIONS := $(OPENOCD_OPTIONS) --enable-ft2232_libftdi
-endif
-
-openocd_install: openocd_clean
-        # download the source only if it's newer than what we already have
-	$(V1) wget -N -P "$(DL_DIR)" --trust-server-name "$(OPENOCD_URL)"
-
-        # extract the source
-	$(V1) [ ! -d "$(OPENOCD_BUILD_DIR)" ] || $(RM) -r "$(OPENOCD_BUILD_DIR)"
-	$(V1) mkdir -p "$(OPENOCD_BUILD_DIR)"
-	$(V1) tar -C $(OPENOCD_BUILD_DIR) -xjf "$(DL_DIR)/$(OPENOCD_FILE)"
-
-        # apply patches
-	$(V0) @echo " PATCH        $(OPENOCD_DIR)"
-	$(V1) ( \
-	  cd $(OPENOCD_BUILD_DIR)/openocd-0.6.1 ; \
-	  patch -p1 < $(ROOT_DIR)/flight/Project/OpenOCD/0001-armv7m-remove-dummy-FP-regs-for-new-gdb.patch ; \
-	  patch -p1 < $(ROOT_DIR)/flight/Project/OpenOCD/0002-rtos-add-stm32_stlink-to-FreeRTOS-targets.patch ; \
-	)
-
-        # build and install
-	$(V1) mkdir -p "$(OPENOCD_DIR)"
-	$(V1) ( \
-	  cd $(OPENOCD_BUILD_DIR)/openocd-0.6.1 ; \
-	  ./configure $(OPENOCD_OPTIONS) ; \
-	  $(MAKE) --silent ; \
-	  $(MAKE) --silent install ; \
-	)
-
-        # delete the extracted source when we're done
-	$(V1) [ ! -d "$(OPENOCD_BUILD_DIR)" ] || $(RM) -rf "$(OPENOCD_BUILD_DIR)"
 
 .PHONY: ftd2xx_install
 
@@ -197,19 +165,18 @@ libusb_win_clean:
 	$(V0) @echo " CLEAN        $(LIBUSB_WIN_DIR)"
 	$(V1) [ ! -d "$(LIBUSB_WIN_DIR)" ] || $(RM) -r "$(LIBUSB_WIN_DIR)"
 
-.PHONY: openocd_git_win_install
+.PHONY: openocd_win_install
 
-openocd_git_win_install: | $(DL_DIR) $(TOOLS_DIR)
-openocd_git_win_install: OPENOCD_URL  := git://git.code.sf.net/p/openocd/code
-openocd_git_win_install: OPENOCD_REV  := cf1418e9a85013bbf8dbcc2d2e9985695993d9f4
-openocd_git_win_install: OPENOCD_OPTIONS := 
+openocd_win_install: | $(DL_DIR) $(TOOLS_DIR)
+openocd_win_install: OPENOCD_URL  := git://git.code.sf.net/p/openocd/code
+openocd_win_install: OPENOCD_REV  := cf1418e9a85013bbf8dbcc2d2e9985695993d9f4
+openocd_win_install: OPENOCD_OPTIONS := 
 
 ifeq ($(OPENOCD_FTDI), yes)
-openocd_git_win_install: OPENOCD_OPTIONS := $(OPENOCD_OPTIONS) --enable-ft2232_ftd2xx --with-ftd2xx-win32-zipdir=$(FTD2XX_DIR)
+openocd_win_install: OPENOCD_OPTIONS := $(OPENOCD_OPTIONS) --enable-ft2232_ftd2xx --with-ftd2xx-win32-zipdir=$(FTD2XX_DIR)
 endif
 
-openocd_git_win_install: openocd_win_clean libusb_win_install ftd2xx_install
-
+openocd_win_install: openocd_win_clean libusb_win_install ftd2xx_install
         # download the source
 	$(V0) @echo " DOWNLOAD     $(OPENOCD_URL) @ $(OPENOCD_REV)"
 	$(V1) [ ! -d "$(OPENOCD_BUILD_DIR)" ] || $(RM) -rf "$(OPENOCD_BUILD_DIR)"
@@ -253,24 +220,27 @@ openocd_win_clean:
 	$(V0) @echo " CLEAN        $(OPENOCD_WIN_DIR)"
 	$(V1) [ ! -d "$(OPENOCD_WIN_DIR)" ] || $(RM) -r "$(OPENOCD_WIN_DIR)"
 
-.PHONY: openocd_git_install
+# Set up openocd tools
+OPENOCD_DIR       := $(TOOLS_DIR)/openocd
+OPENOCD_WIN_DIR   := $(TOOLS_DIR)/openocd_win
+OPENOCD_BUILD_DIR := $(DL_DIR)/openocd-build
 
-openocd_git_install: | $(DL_DIR) $(TOOLS_DIR)
-openocd_git_install: OPENOCD_URL     := git://git.code.sf.net/p/openocd/code
-openocd_git_install: OPENOCD_REV     := cf1418e9a85013bbf8dbcc2d2e9985695993d9f4
-openocd_git_install: OPENOCD_OPTIONS := --enable-maintainer-mode --prefix="$(OPENOCD_DIR)" --enable-buspirate --enable-stlink
+.PHONY: openocd_install
+
+openocd_install: | $(DL_DIR) $(TOOLS_DIR)
+openocd_install: OPENOCD_URL     := git://git.code.sf.net/p/openocd/code
+openocd_install: OPENOCD_REV     := cf1418e9a85013bbf8dbcc2d2e9985695993d9f4
+openocd_install: OPENOCD_OPTIONS := --enable-maintainer-mode --prefix="$(OPENOCD_DIR)" --enable-buspirate --enable-stlink
 
 ifeq ($(OPENOCD_FTDI), yes)
-openocd_git_install: OPENOCD_OPTIONS := $(OPENOCD_OPTIONS) --enable-ft2232_libftdi
+openocd_install: OPENOCD_OPTIONS := $(OPENOCD_OPTIONS) --enable-ft2232_libftdi
 endif
 
 ifeq ($(UNAME), Darwin)
-openocd_git_install: OPENOCD_OPTIONS := $(OPENOCD_OPTIONS) --disable-option-checking
+openocd_install: OPENOCD_OPTIONS := $(OPENOCD_OPTIONS) --disable-option-checking
 endif
 
-openocd_git_install: openocd_clean
-
-
+openocd_install: openocd_clean
         # download the source
 	$(V0) @echo " DOWNLOAD     $(OPENOCD_URL) @ $(OPENOCD_REV)"
 	$(V1) [ ! -d "$(OPENOCD_BUILD_DIR)" ] || $(RM) -rf "$(OPENOCD_BUILD_DIR)"
@@ -442,7 +412,7 @@ ASTYLE_BUILD_DIR := $(DL_DIR)/astyle
 
 .PHONY: astyle_install
 astyle_install: | $(DL_DIR) $(TOOLS_DIR)
-astyle_install: ASTYLE_URL := https://astyle.svn.sourceforge.net/svnroot/astyle/trunk/AStyle
+astyle_install: ASTYLE_URL := https://svn.code.sf.net/p/astyle/code/trunk/AStyle
 astyle_install: ASTYLE_REV := 376
 astyle_install: ASTYLE_OPTIONS := prefix=$(ASTYLE_DIR)
 astyle_install: astyle_clean
@@ -467,3 +437,117 @@ astyle_clean:
 	$(V1) [ ! -d "$(ASTYLE_DIR)" ] || $(RM) -r "$(ASTYLE_DIR)"
 	$(V0) @echo " CLEAN        $(ASTYLE_BUILD_DIR)"
 	$(V1) [ ! -d "$(ASTYLE_BUILD_DIR)" ] || $(RM) -r "$(ASTYLE_BUILD_DIR)"
+
+
+# Set up libkml
+
+.PHONY: libkml_install
+libkml_install: | $(DL_DIR) $(TOOLS_DIR)
+libkml_install: LIBKML_URL := https://github.com/kubark42/libkml.git
+libkml_install: LIBKML_REV  := e4e1c525363b8b1bbe5d6683827a07e7c252b815
+libkml_install: LIBKML_INSTALL_DIR := $(TOOLS_DIR)/libkml
+libkml_install: LIBKML_BUILD_DIR := $(DL_DIR)/libkml-build
+libkml_install: libkml_clean
+        # download the source
+	$(V0) @echo " DOWNLOAD     $(LIBKML_URL) @ $(LIBKML_REV)"
+	$(V1) [ ! -d "$(LIBKML_BUILD_DIR)" ] || $(RM) -rf "$(LIBKML_BUILD_DIR)"
+	$(V1) mkdir -p "$(LIBKML_BUILD_DIR)"
+	$(V1) git clone --no-checkout $(LIBKML_URL) "$(LIBKML_BUILD_DIR)"
+	$(V1) ( \
+	  cd $(LIBKML_BUILD_DIR) ; \
+	  git checkout -q $(LIBKML_REV) ; \
+	)
+
+        # build and install
+	$(V0) @echo " BUILD        $(LIBKML_INSTALL_DIR)"
+	$(V1) mkdir -p "$(LIBKML_BUILD_DIR)/build"
+	$(V1) ( \
+	  cd $(LIBKML_BUILD_DIR) ; \
+	  ./autogen.sh ; \
+	  cd $(LIBKML_BUILD_DIR)/build ; \
+	  ../configure --prefix="$(LIBKML_INSTALL_DIR)"; \
+	  $(MAKE) ; \
+	  $(MAKE) install ; \
+	)
+
+        # delete the extracted source when we're done
+	$(V1) [ ! -d "$(LIBKML_BUILD_DIR)" ] || $(RM) -rf "$(LIBKML_BUILD_DIR)"
+
+.PHONY: libkml_clean
+libkml_clean:
+	$(V0) @echo " CLEAN        $(LIBKML_INSTALL_DIR)"
+	$(V1) [ ! -d "$(LIBKML_INSTALL_DIR)" ] || $(RM) -rf "$(LIBKML_INSTALL_DIR)"
+	$(V0) @echo " CLEAN        $(LIBKML_BUILD_DIR)"
+	$(V1) [ ! -d "$(LIBKML_BUILD_DIR)" ] || $(RM) -rf "$(LIBKML_BUILD_DIR)"
+
+##############################
+#
+# Set up paths to tools
+#
+##############################
+
+ifeq ($(shell [ -d "$(QT_SDK_DIR)" ] && echo "exists"), exists)
+  QMAKE = $(QT_SDK_QMAKE_PATH)
+ifdef WINDOWS
+  # Windows needs to be told where to find Qt libraries
+  export PATH := $(QT_SDK_DIR)/5.2.1/mingw48_32/bin:$(PATH) 
+endif
+else
+  # not installed, hope it's in the path...
+  QMAKE = qmake
+endif
+
+ifeq ($(shell [ -d "$(ARM_SDK_DIR)" ] && echo "exists"), exists)
+  ARM_SDK_PREFIX := $(ARM_SDK_DIR)/bin/arm-none-eabi-
+else
+  # not installed, hope it's in the path...
+  ARM_SDK_PREFIX ?= arm-none-eabi-
+endif
+
+ifeq ($(shell [ -d "$(OPENOCD_DIR)" ] && echo "exists"), exists)
+  OPENOCD := $(OPENOCD_DIR)/bin/openocd
+else
+  # not installed, hope it's in the path...
+  OPENOCD ?= openocd
+endif
+
+ifeq ($(shell [ -d "$(ANDROID_SDK_DIR)" ] && echo "exists"), exists)
+  ANDROID     := $(ANDROID_SDK_DIR)/tools/android
+  ANDROID_DX  := $(ANDROID_SDK_DIR)/platform-tools/dx
+  ANDROID_ADB := $(ANDROID_SDK_DIR)/platform-tools/adb
+else
+  # not installed, hope it's in the path...
+  ANDROID     ?= android
+  ANDROID_DX  ?= dx
+  ANDROID_ADB ?= adb
+endif
+
+ifeq ($(shell [ -d "$(ASTYLE_DIR)" ] && echo "exists"), exists)
+  ASTYLE := $(ASTYLE_DIR)/bin/astyle
+else
+  # not installed, hope it's in the path...
+  ASTYLE ?= astyle
+endif	
+
+.PHONY: openssl_install
+
+# OPENSSL download URL
+ifdef WINDOWS
+  openssl_install: OPENSSL_URL  := http://slproweb.com/download/Win32OpenSSL_Light-1_0_1f.exe
+  
+openssl_install: OPENSSL_FILE := $(notdir $(OPENSSL_URL))
+OPENSSL_DIR = $(TOOLS_DIR)/win32openssl
+# order-only prereq on directory existance:
+openssl_install : | $(DL_DIR) $(TOOLS_DIR)
+openssl_install: openssl_clean
+        # download the instalatopn file only if it's newer than what we already have
+	$(V1) wget -N -P "$(DL_DIR)" "$(OPENSSL_URL)"
+	$(V1) ./downloads/$(OPENSSL_FILE) /DIR=$(OPENSSL_DIR) /silent
+else
+openssl_install:
+	$(V1) $(error THIS IS A WINDOWS ONLY TARGET)
+endif
+
+.PHONY: openssl_clean
+openssl_clean:
+	$(V1) [ ! -d "$(OPENSSL_DIR)" ] || $(RM) -rf $(OPENSSL_DIR)

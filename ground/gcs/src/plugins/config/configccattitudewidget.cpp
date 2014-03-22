@@ -122,7 +122,7 @@ ConfigCCAttitudeWidget::~ConfigCCAttitudeWidget()
 void ConfigCCAttitudeWidget::openHelp()
 {
 
-    QDesktopServices::openUrl( QUrl("http://wiki.openpilot.org/x/44Cf", QUrl::StrictMode) );
+    QDesktopServices::openUrl( QUrl("http://wiki.taulabs.org/OnlineHelp:-Vehicle-configuration", QUrl::StrictMode) );
 }
 
 void ConfigCCAttitudeWidget::enableControls(bool enable)

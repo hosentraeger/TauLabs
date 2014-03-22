@@ -31,7 +31,7 @@
 
 #include <coreplugin/icontext.h>
 #include <coreplugin/core_global.h>
-#include <QtGui/QComboBox>
+#include <QComboBox>
 #include <QtCore/QSettings>
 
 QT_BEGIN_NAMESPACE
@@ -69,7 +69,6 @@ public slots:
     virtual void configurationChanged(IUAVGadgetConfiguration* ) { }
     virtual void configurationAdded(IUAVGadgetConfiguration*) { }
     virtual void configurationToBeDeleted(IUAVGadgetConfiguration*) { }
-    virtual void configurationNameChanged(QString, QString) { }
 private slots:
 private:
     QString m_classId;

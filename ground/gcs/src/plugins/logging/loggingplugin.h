@@ -87,6 +87,7 @@ class LoggingThread : public QThread
 {
 Q_OBJECT
 public:
+    ~LoggingThread();
     bool openFile(QString file, LoggingPlugin * parent);
 
 private slots:
@@ -113,6 +114,7 @@ private:
 class LoggingPlugin : public ExtensionSystem::IPlugin
 {
     Q_OBJECT
+    Q_PLUGIN_METADATA(IID "TauLabs.plugins.LoggingGadget" FILE "LoggingGadget.json")
 
 public:
     LoggingPlugin();
@@ -122,7 +124,7 @@ public:
     bool initialize(const QStringList & arguments, QString * errorString);
     void shutdown();
 
-    LoggingConnection* getLogConnection() { return logConnection; };
+    LoggingConnection* getLogConnection() { return logConnection; }
     LogFile* getLogfile() { return logConnection->getLogfile();}
     void setLogMenuTitle(QString str);
 

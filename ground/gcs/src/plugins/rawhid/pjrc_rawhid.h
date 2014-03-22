@@ -3,6 +3,7 @@
  *
  * @file       pjrc_rawhid.h
  * @author     The OpenPilot Team, http://www.openpilot.org Copyright (C) 2010.
+ * @author     Tau Labs, http://github.com/TauLabs, Copyright (C) 2013.
  * @addtogroup GCSPlugins GCS Plugins
  * @{
  * @addtogroup RawHIDPlugin Raw HID Plugin
@@ -30,7 +31,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
+#include <qglobal.h>
 #include <vector>
 #include <QDebug>
 #include <QMutex>
@@ -50,8 +51,33 @@
 #elif defined(Q_OS_WIN32)
 #include <windows.h>
 #include <setupapi.h>
-#include <ddk/hidsdi.h>
-#include <ddk/hidclass.h>
+#include <hidsdi.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+// Some functions no longer included in hidsdi.h
+
+//HIDAPI BOOL NTAPI HidD_GetAttributes (HANDLE, PHIDD_ATTRIBUTES);
+HIDAPI VOID NTAPI HidD_GetHidGuid (LPGUID);
+HIDAPI BOOL NTAPI HidD_GetPreparsedData(HANDLE, PHIDP_PREPARSED_DATA  *);
+HIDAPI BOOL NTAPI HidD_FreePreparsedData(PHIDP_PREPARSED_DATA);
+HIDAPI BOOL NTAPI HidD_FlushQueue (HANDLE);
+HIDAPI BOOL NTAPI HidD_GetConfiguration (HANDLE, PHIDD_CONFIGURATION, ULONG);
+HIDAPI BOOL NTAPI HidD_SetConfiguration (HANDLE, PHIDD_CONFIGURATION, ULONG);
+//HIDAPI BOOL NTAPI HidD_GetFeature (HANDLE, PVOID, ULONG);
+//HIDAPI BOOL NTAPI HidD_SetFeature (HANDLE, PVOID, ULONG);
+HIDAPI BOOL NTAPI HidD_GetNumInputBuffers (HANDLE, PULONG);
+HIDAPI BOOL NTAPI HidD_SetNumInputBuffers (HANDLE HidDeviceObject, ULONG);
+HIDAPI BOOL NTAPI HidD_GetPhysicalDescriptor (HANDLE, PVOID, ULONG);
+HIDAPI BOOL NTAPI HidD_GetManufacturerString (HANDLE, PVOID, ULONG);
+HIDAPI BOOL NTAPI HidD_GetProductString ( HANDLE, PVOID, ULONG);
+HIDAPI BOOL NTAPI HidD_GetIndexedString ( HANDLE, ULONG, PVOID, ULONG);
+HIDAPI BOOL NTAPI HidD_GetSerialNumberString (HANDLE, PVOID, ULONG);
+
+#ifdef __cplusplus
+}
+#endif
 #endif
 
 // ************
@@ -101,13 +127,13 @@ private:
      // Static callbacks called by the HID system with handles to the PJRC object
      static void attach_callback(void *, IOReturn, void *, IOHIDDeviceRef);
      static void dettach_callback(void *, IOReturn, void *hid_mgr, IOHIDDeviceRef dev);
-     static void input_callback(void *, IOReturn, void *, IOHIDReportType, uint32_t, uint8_t *, CFIndex);
+     static void input_callback(void *, IOReturn, void *, IOHIDReportType, quint32, quint8 *, CFIndex);
      static void timeout_callback(CFRunLoopTimerRef, void *);
 
      // Non static methods to call into
      void attach(IOHIDDeviceRef dev);
      void dettach(IOHIDDeviceRef dev);
-     void input(uint8_t *, CFIndex);
+     void input(quint8 *, CFIndex);
 
      // Platform specific handles for the USB device
      IOHIDManagerRef hid_manager;
@@ -116,7 +142,7 @@ private:
      CFRunLoopRef received_runloop;
 
      static const int BUFFER_SIZE = 64;
-     uint8_t buffer[BUFFER_SIZE];
+     quint8 buffer[BUFFER_SIZE];
      int attach_count;
      int buffer_count;
      bool device_open;
@@ -145,7 +171,7 @@ private:
      std::vector<ssize_t> m_DeviceInterfaces;
 
 
-     int hid_parse_item(uint32_t *val, uint8_t **data, const uint8_t *end);
+     int hid_parse_item(quint32 *val, quint8 **data, const quint8 *end);
 
 #elif defined(Q_OS_WIN32)
 

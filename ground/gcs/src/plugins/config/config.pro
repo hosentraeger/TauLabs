@@ -5,7 +5,8 @@ QT += svg
 include(config_dependencies.pri)
 INCLUDEPATH *= ../../libs/eigen
 
-OTHER_FILES += Config.pluginspec
+OTHER_FILES += Config.pluginspec \
+    Config.json
 
 HEADERS += calibration.h \
     configplugin.h \
@@ -14,7 +15,6 @@ HEADERS += calibration.h \
     configgadgetfactory.h \
     configgadgetoptionspage.h \
     configgadget.h \
-    fancytabwidget.h \
     configinputwidget.h \
     configoutputwidget.h \
     configvehicletypewidget.h \
@@ -25,7 +25,6 @@ HEADERS += calibration.h \
     calibration.h \
     defaulthwsettingswidget.h \
     inputchannelform.h \
-    modulesettingsform.h \
     configcamerastabilizationwidget.h \
     configtxpidwidget.h \
     outputchannelform.h \    
@@ -42,7 +41,8 @@ HEADERS += calibration.h \
     hwfieldselector.h \
     tempcompcurve.h \
     textbubbleslider.h \
-    vehicletrim.h
+    vehicletrim.h \
+    configmodulewidget.h
 
 SOURCES += calibration.cpp \
     configplugin.cpp \
@@ -51,7 +51,6 @@ SOURCES += calibration.cpp \
     configgadgetfactory.cpp \
     configgadgetoptionspage.cpp \
     configgadget.cpp \
-    fancytabwidget.cpp \
     configinputwidget.cpp \
     configoutputwidget.cpp \
     configvehicletypewidget.cpp \
@@ -60,7 +59,6 @@ SOURCES += calibration.cpp \
     configpipxtremewidget.cpp \
     defaulthwsettingswidget.cpp \
     inputchannelform.cpp \
-    modulesettingsform.cpp \
     configcamerastabilizationwidget.cpp \
     configattitudewidget.cpp \
     configtxpidwidget.cpp \
@@ -76,11 +74,11 @@ SOURCES += calibration.cpp \
     hwfieldselector.cpp \
     tempcompcurve.cpp \
     textbubbleslider.cpp \
-    vehicletrim.cpp
+    vehicletrim.cpp \
+    configmodulewidget.cpp
 
 FORMS += airframe.ui \
     cc_hw_settings.ui \
-    modulesettingsform.ui \
     ccpm.ui \
     stabilization.ui \
     input.ui \
@@ -94,7 +92,8 @@ FORMS += airframe.ui \
     pipxtreme.ui \
     mixercurve.ui \
     autotune.ui \
-    hwfieldselector.ui
+    hwfieldselector.ui \
+    modules.ui
 RESOURCES += configgadget.qrc
 
 

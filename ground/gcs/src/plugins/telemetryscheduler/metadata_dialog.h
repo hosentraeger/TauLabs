@@ -1,7 +1,7 @@
 /**
  ******************************************************************************
  * @file       metadata_dialog.h
- * @author     Tau Labs, http://www.taulabls.org Copyright (C) 2013.
+ * @author     Tau Labs, http://taulabs.org Copyright (C) 2013.
  * @addtogroup Telemetry Scheduler GCS Plugins
  * @{
  * @addtogroup TelemetrySchedulerGadgetPlugin Telemetry Scheduler Gadget Plugin
@@ -41,13 +41,14 @@ public:
 
     UAVObject::Metadata getMetadata(){return *m_mdata;}
     bool getResetDefaults_flag(){return resetDefaults_flag;}
+    bool getSaveState_flag(){return saveMetadata_flag;}
 
 signals:
 
 protected slots:
 
 private slots:
-    void applyMetadata();
+    void saveApplyMetadata();
     void resetMetadataToDefaults();
     void cancelChanges();
 private:
@@ -56,6 +57,7 @@ private:
     UAVObject::Metadata *m_mdata;
     Ui_MetadataDialog metadata_editor;
     bool resetDefaults_flag;
+    bool saveMetadata_flag;
 };
 
 

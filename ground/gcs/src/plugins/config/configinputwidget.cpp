@@ -32,10 +32,10 @@
 
 #include <QDebug>
 #include <QStringList>
-#include <QtGui/QWidget>
-#include <QtGui/QTextEdit>
-#include <QtGui/QVBoxLayout>
-#include <QtGui/QPushButton>
+#include <QWidget>
+#include <QTextEdit>
+#include <QVBoxLayout>
+#include <QPushButton>
 #include <QDesktopServices>
 #include <QUrl>
 #include <QMessageBox>
@@ -44,6 +44,8 @@
 
 #include <extensionsystem/pluginmanager.h>
 #include <coreplugin/generalsettings.h>
+
+#include "actuatorcommand.h"
 
 #define ACCESS_MIN_MOVE -3
 #define ACCESS_MAX_MOVE 3
@@ -60,10 +62,15 @@ ConfigInputWidget::ConfigInputWidget(QWidget *parent) : ConfigTaskWidget(parent)
     m_config->setupUi(this);
     
     ExtensionSystem::PluginManager *pm=ExtensionSystem::PluginManager::instance();
+    Q_ASSERT(pm);
     Core::Internal::GeneralSettings * settings=pm->getObject<Core::Internal::GeneralSettings>();
     if(!settings->useExpertMode())
         m_config->saveRCInputToRAM->setVisible(false);
-    
+
+    // Get telemetry manager and make sure it is valid
+    telMngr = pm->getObject<TelemetryManager>();
+    Q_ASSERT(telMngr);
+
     addApplySaveButtons(m_config->saveRCInputToRAM,m_config->saveRCInputToSD);
 
     //Generate the rows of buttons in the input channel form GUI
@@ -175,6 +182,12 @@ ConfigInputWidget::ConfigInputWidget(QWidget *parent) : ConfigTaskWidget(parent)
         m_txFlightMode->setElementId("flightModeCenter");
         m_txFlightMode->setZValue(-10);
 
+        m_txArming = new QGraphicsSvgItem();
+        m_txArming->setParentItem(m_txBackground);
+        m_txArming->setSharedRenderer(m_renderer);
+        m_txArming->setElementId("armedswitchleft");
+        m_txArming->setZValue(-10);
+
         m_txArrows = new QGraphicsSvgItem();
         m_txArrows->setParentItem(m_txBackground);
         m_txArrows->setSharedRenderer(m_renderer);
@@ -209,10 +222,21 @@ ConfigInputWidget::ConfigInputWidget(QWidget *parent) : ConfigTaskWidget(parent)
         Matrix = m_renderer->matrixForElement("flightModeLeft");
         orig=Matrix.mapRect(orig);
         m_txFlightModeLOrig.translate(orig.x(),orig.y());
+
         orig=m_renderer->boundsOnElement("flightModeRight");
         Matrix = m_renderer->matrixForElement("flightModeRight");
         orig=Matrix.mapRect(orig);
         m_txFlightModeROrig.translate(orig.x(),orig.y());
+
+        orig=m_renderer->boundsOnElement("armedswitchright");
+        Matrix = m_renderer->matrixForElement("armedswitchright");
+        orig=Matrix.mapRect(orig);
+        m_txArmingSwitchOrigR.translate(orig.x(),orig.y());
+
+        orig=m_renderer->boundsOnElement("armedswitchleft");
+        Matrix = m_renderer->matrixForElement("armedswitchleft");
+        orig=Matrix.mapRect(orig);
+        m_txArmingSwitchOrigL.translate(orig.x(),orig.y());
 
         orig=m_renderer->boundsOnElement("rjoy");
         Matrix = m_renderer->matrixForElement("rjoy");
@@ -250,7 +274,8 @@ ConfigInputWidget::ConfigInputWidget(QWidget *parent) : ConfigTaskWidget(parent)
                         ManualControlSettings::CHANNELGROUPS_FLIGHTMODE <<
                         ManualControlSettings::CHANNELGROUPS_ACCESSORY0 <<
                         ManualControlSettings::CHANNELGROUPS_ACCESSORY1 <<
-                        ManualControlSettings::CHANNELGROUPS_ACCESSORY2;
+                        ManualControlSettings::CHANNELGROUPS_ACCESSORY2 <<
+                        ManualControlSettings::CHANNELGROUPS_ARMING;
 
     acroChannelOrder << ManualControlSettings::CHANNELGROUPS_THROTTLE <<
                         ManualControlSettings::CHANNELGROUPS_ROLL <<
@@ -259,7 +284,8 @@ ConfigInputWidget::ConfigInputWidget(QWidget *parent) : ConfigTaskWidget(parent)
                         ManualControlSettings::CHANNELGROUPS_FLIGHTMODE <<
                         ManualControlSettings::CHANNELGROUPS_ACCESSORY0 <<
                         ManualControlSettings::CHANNELGROUPS_ACCESSORY1 <<
-                        ManualControlSettings::CHANNELGROUPS_ACCESSORY2;
+                        ManualControlSettings::CHANNELGROUPS_ACCESSORY2 <<
+                        ManualControlSettings::CHANNELGROUPS_ARMING;
 }
 void ConfigInputWidget::resetTxControls()
 {
@@ -271,6 +297,8 @@ void ConfigInputWidget::resetTxControls()
     m_txAccess2->setTransform(m_txAccess2Orig,false);
     m_txFlightMode->setElementId("flightModeCenter");
     m_txFlightMode->setTransform(m_txFlightModeCOrig,false);
+    m_txArming->setElementId("armedswitchleft");
+    m_txArming->setTransform(m_txArmingSwitchOrigL,false);
     m_txArrows->setVisible(false);
 }
 
@@ -287,11 +315,14 @@ void ConfigInputWidget::resizeEvent(QResizeEvent *event)
 
 void ConfigInputWidget::openHelp()
 {
-    QDesktopServices::openUrl( QUrl("http://wiki.openpilot.org/x/04Cf", QUrl::StrictMode) );
+    QDesktopServices::openUrl( QUrl("http://wiki.taulabs.org/OnlineHelp:-Input-Configuration", QUrl::StrictMode) );
 }
 
 void ConfigInputWidget::goToWizard()
 {
+    // Monitor for connection loss to reset wizard safely
+    connect(telMngr, SIGNAL(disconnected()), this, SLOT(wzCancel()));
+
     QMessageBox msgBox;
     msgBox.setText(tr("Arming Settings will be set to Always Disarmed for your safety."));
     msgBox.setDetailedText(tr("You will have to reconfigure the arming settings manually "
@@ -327,6 +358,8 @@ void ConfigInputWidget::disableWizardButton(int value)
 
 void ConfigInputWidget::wzCancel()
 {
+    disconnect(telMngr, SIGNAL(disconnected()), this, SLOT(wzCancel()));
+
     dimOtherControls(false);
     manualCommandObj->setMetadata(manualCommandObj->getDefaultMetadata());
     m_config->stackedWidget->setCurrentIndex(0);
@@ -379,6 +412,8 @@ void ConfigInputWidget::wzNext()
         wizardSetUpStep(wizardFinish);
         break;
     case wizardFinish:
+        disconnect(telMngr, SIGNAL(disconnected()), this, SLOT(wzCancel()));
+
         wizardStep=wizardNone;
         m_config->stackedWidget->setCurrentIndex(0);
         m_config->tabWidget->setCurrentIndex(2);
@@ -438,9 +473,21 @@ void ConfigInputWidget::wizardSetUpStep(enum wizardSteps step)
         extraWidgets.clear();
         m_config->graphicsView->setVisible(false);
         setTxMovement(nothing);
+
+        // Store the previous settings, although set to always disarmed for safety
         manualSettingsData=manualSettingsObj->getData();
         manualSettingsData.Arming=ManualControlSettings::ARMING_ALWAYSDISARMED;
         previousManualSettingsData = manualSettingsData;
+
+        // Now clear all the previous channel settings
+        for (uint i = 0; i++; i < ManualControlSettings::CHANNELNUMBER_NUMELEM) {
+            manualSettingsData.ChannelNumber[i] = 0;
+            manualSettingsData.ChannelMin[i] = 0;
+            manualSettingsData.ChannelNeutral[i] = 0;
+            manualSettingsData.ChannelMax[i] = 0;
+            manualSettingsData.ChannelGroups[i] = ManualControlSettings::CHANNELGROUPS_NONE;
+        }
+
         manualSettingsObj->setData(manualSettingsData);
         m_config->wzText->setText(tr("Welcome to the inputs configuration wizard.\n"
                                      "Please follow the instructions on the screen and only move your controls when asked to.\n"
@@ -510,7 +557,7 @@ void ConfigInputWidget::wizardSetUpStep(enum wizardSteps step)
         m_config->wzText->setText(QString(tr("Please move all controls to their maximum extents on both directions and press next when ready.")));
         fastMdata();
         manualSettingsData=manualSettingsObj->getData();
-        for(uint i=0;i<ManualControlSettings::CHANNELMAX_NUMELEM;++i)
+        for(quint8 i=0;i<ManualControlSettings::CHANNELMAX_NUMELEM;++i)
         {
             // Preserve the inverted status
             if(manualSettingsData.ChannelMin[i] <= manualSettingsData.ChannelMax[i]) {
@@ -572,6 +619,7 @@ void ConfigInputWidget::wizardSetUpStep(enum wizardSteps step)
             manualSettingsData.ChannelNeutral[ManualControlSettings::CHANNELNEUTRAL_FLIGHTMODE]=manualSettingsData.ChannelMin[ManualControlSettings::CHANNELMIN_FLIGHTMODE]+
                     (manualSettingsData.ChannelMax[ManualControlSettings::CHANNELMAX_FLIGHTMODE]-manualSettingsData.ChannelMin[ManualControlSettings::CHANNELMIN_FLIGHTMODE])/2;
         }
+        manualSettingsData.ChannelNeutral[ManualControlSettings::CHANNELNEUTRAL_ARMING] = manualSettingsData.ChannelMin[ManualControlSettings::CHANNELNEUTRAL_ARMING] + (manualSettingsData.ChannelMax[ManualControlSettings::CHANNELNEUTRAL_ARMING]-manualSettingsData.ChannelMin[ManualControlSettings::CHANNELNEUTRAL_ARMING])/2;
         manualSettingsObj->setData(manualSettingsData);
         break;
     default:
@@ -671,8 +719,8 @@ void ConfigInputWidget::fastMdata()
     originalMetaData = utilMngr->readAllNonSettingsMetadata();
 
     // Update data rates
-    uint16_t slowUpdate = 5000; // in [ms]
-    uint16_t fastUpdate =  150; // in [ms]
+    quint16 slowUpdate = 5000; // in [ms]
+    quint16 fastUpdate =  150; // in [ms]
 
     // Iterate over list of UAVObjects, configuring all dynamic data metadata objects.
     UAVObjectManager *objManager = getObjectManager();
@@ -694,13 +742,18 @@ void ConfigInputWidget::fastMdata()
                         UAVObject::SetFlightTelemetryUpdateMode(mdata, UAVObject::UPDATEMODE_PERIODIC);
                         mdata.flightTelemetryUpdatePeriod = fastUpdate;
                         break;
+                    case ActuatorCommand::OBJID:
+                        UAVObject::SetFlightAccess(mdata, UAVObject::ACCESS_READONLY);
+                        UAVObject::SetFlightTelemetryUpdateMode(mdata, UAVObject::UPDATEMODE_PERIODIC);
+                        mdata.flightTelemetryUpdatePeriod = slowUpdate;
+                        break;
                     default:
                         UAVObject::SetFlightTelemetryUpdateMode(mdata, UAVObject::UPDATEMODE_PERIODIC);
                         mdata.flightTelemetryUpdatePeriod = slowUpdate;
+                        break;
                 }
 
                 metaDataList.insert(obj->getName(), mdata);
-
             }
         }
     }
@@ -730,6 +783,8 @@ void ConfigInputWidget::setChannel(int newChan)
         m_config->wzText->setText(QString(tr("Please enable the throttle hold mode and move the collective pitch stick.")));
     else if (newChan == ManualControlSettings::CHANNELGROUPS_FLIGHTMODE)
         m_config->wzText->setText(QString(tr("Please toggle the flight mode switch. For switches you may have to repeat this rapidly.")));
+    else if (newChan == ManualControlSettings::CHANNELGROUPS_ARMING)
+        m_config->wzText->setText(QString(tr("Please toggle the arming switch. For switches you may have to repeat this rapidly.")));
     else if((transmitterType == heli) && (newChan == ManualControlSettings::CHANNELGROUPS_THROTTLE))
         m_config->wzText->setText(QString(tr("Please disable throttle hold mode and move the throttle stick.")));
     else
@@ -737,7 +792,8 @@ void ConfigInputWidget::setChannel(int newChan)
                                  "Move the %1 stick")).arg(manualSettingsObj->getField("ChannelGroups")->getElementNames().at(newChan)));
 
     if(manualSettingsObj->getField("ChannelGroups")->getElementNames().at(newChan).contains("Accessory") ||
-       manualSettingsObj->getField("ChannelGroups")->getElementNames().at(newChan).contains("FlightMode")) {
+       manualSettingsObj->getField("ChannelGroups")->getElementNames().at(newChan).contains("FlightMode") ||
+       manualSettingsObj->getField("ChannelGroups")->getElementNames().at(newChan).contains("Arming")) {
         m_config->wzNext->setEnabled(true);
         m_config->wzText->setText(m_config->wzText->text() + tr(" or click next to skip this channel."));
     } else
@@ -846,7 +902,7 @@ void ConfigInputWidget::identifyControls()
 void ConfigInputWidget::identifyLimits()
 {
     manualCommandData=manualCommandObj->getData();
-    for(uint i=0;i<ManualControlSettings::CHANNELMAX_NUMELEM;++i)
+    for(quint8 i=0;i<ManualControlSettings::CHANNELMAX_NUMELEM;++i)
     {
         if(manualSettingsData.ChannelMin[i] <= manualSettingsData.ChannelMax[i]) {
             // Non inverted channel
@@ -866,7 +922,6 @@ void ConfigInputWidget::identifyLimits()
 }
 void ConfigInputWidget::setMoveFromCommand(int command)
 {
-    //CHANNELNUMBER_ROLL=0, CHANNELNUMBER_PITCH=1, CHANNELNUMBER_YAW=2, CHANNELNUMBER_THROTTLE=3, CHANNELNUMBER_FLIGHTMODE=4, CHANNELNUMBER_ACCESSORY0=5, CHANNELNUMBER_ACCESSORY1=6, CHANNELNUMBER_ACCESSORY2=7 } ChannelNumberElem;
     if(command==ManualControlSettings::CHANNELNUMBER_ROLL)
     {
             setTxMovement(moveRightHorizontalStick);
@@ -899,6 +954,10 @@ void ConfigInputWidget::setMoveFromCommand(int command)
     else if(command==ManualControlSettings::CHANNELNUMBER_FLIGHTMODE)
     {
         setTxMovement(moveFlightMode);
+    }
+    else if(command==ManualControlSettings::CHANNELNUMBER_ARMING)
+    {
+        setTxMovement(armingSwitch);
     }
     else if(command==ManualControlSettings::CHANNELNUMBER_ACCESSORY0)
     {
@@ -968,6 +1027,12 @@ void ConfigInputWidget::setTxMovement(txMovements movement)
         currentMovement=moveFlightMode;
         animate->start(1000);
         break;
+    case armingSwitch:
+        movePos=0;
+        growing=true;
+        currentMovement=armingSwitch;
+        animate->start(1000);
+        break;
     case centerAll:
         movePos=0;
         currentMovement=centerAll;
@@ -991,10 +1056,10 @@ void ConfigInputWidget::setTxMovement(txMovements movement)
 void ConfigInputWidget::moveTxControls()
 {
     QTransform trans;
-    QGraphicsItem * item;
-    txMovementType move;
-    int limitMax;
-    int limitMin;
+    QGraphicsItem * item = NULL;
+    txMovementType move = vertical;
+    int limitMax = 0;
+    int limitMin = 0;
     static bool auxFlag=false;
     switch(currentMovement)
     {
@@ -1051,6 +1116,10 @@ void ConfigInputWidget::moveTxControls()
         item=m_txFlightMode;
         move=jump;
         break;
+    case armingSwitch:
+        item=m_txArming;
+        move=jump;
+        break;
     case centerAll:
         item=m_txArrows;
         move=jump;
@@ -1103,6 +1172,24 @@ void ConfigInputWidget::moveTxControls()
                     growing=true;
                     svg->setElementId("flightModeCenter");
                     m_txFlightMode->setTransform(m_txFlightModeCOrig,false);
+                }
+            }
+        }
+        else if(item==m_txArming)
+        {
+            QGraphicsSvgItem * svg;
+            svg=(QGraphicsSvgItem *)item;
+            if (svg)
+            {
+                if(svg->elementId()=="armedswitchleft")
+                {
+                    svg->setElementId("armedswitchright");
+                    m_txArming->setTransform(m_txArmingSwitchOrigR,false);
+                }
+                else
+                {
+                    svg->setElementId("armedswitchleft");
+                    m_txArming->setTransform(m_txArmingSwitchOrigL,false);
                 }
             }
         }
@@ -1171,44 +1258,59 @@ void ConfigInputWidget::moveTxControls()
 void ConfigInputWidget::moveSticks()
 {
     QTransform trans;
-    manualCommandData=manualCommandObj->getData();
+    manualCommandData = manualCommandObj->getData();
     flightStatusData=flightStatusObj->getData();
     accessoryDesiredData0=accessoryDesiredObj0->getData();
     accessoryDesiredData1=accessoryDesiredObj1->getData();
     accessoryDesiredData2=accessoryDesiredObj2->getData();
 
-    if(transmitterMode==mode2)
+    if(transmitterMode == mode2)
     {
-        trans=m_txLeftStickOrig;
-        m_txLeftStick->setTransform(trans.translate(manualCommandData.Yaw*STICK_MAX_MOVE*10,-manualCommandData.Throttle*STICK_MAX_MOVE*10),false);
-        trans=m_txRightStickOrig;
-        m_txRightStick->setTransform(trans.translate(manualCommandData.Roll*STICK_MAX_MOVE*10,manualCommandData.Pitch*STICK_MAX_MOVE*10),false);
+        trans = m_txLeftStickOrig;
+        m_txLeftStick->setTransform(trans.translate(manualCommandData.Yaw * STICK_MAX_MOVE*10, -manualCommandData.Throttle * STICK_MAX_MOVE * 10), false);
+        trans = m_txRightStickOrig;
+        m_txRightStick->setTransform(trans.translate(manualCommandData.Roll * STICK_MAX_MOVE * 10, manualCommandData.Pitch * STICK_MAX_MOVE * 10), false);
     }
     else
     {
-        trans=m_txRightStickOrig;
-        m_txRightStick->setTransform(trans.translate(manualCommandData.Roll*STICK_MAX_MOVE*10,-manualCommandData.Throttle*STICK_MAX_MOVE*10),false);
-        trans=m_txLeftStickOrig;
-        m_txLeftStick->setTransform(trans.translate(manualCommandData.Yaw*STICK_MAX_MOVE*10,manualCommandData.Pitch*STICK_MAX_MOVE*10),false);
+        trans = m_txRightStickOrig;
+        m_txRightStick->setTransform(trans.translate(manualCommandData.Roll * STICK_MAX_MOVE * 10, -manualCommandData.Throttle * STICK_MAX_MOVE * 10), false);
+        trans = m_txLeftStickOrig;
+        m_txLeftStick->setTransform(trans.translate(manualCommandData.Yaw * STICK_MAX_MOVE * 10, manualCommandData.Pitch * STICK_MAX_MOVE*10), false);
     }
-    if(flightStatusData.FlightMode==manualSettingsData.FlightModePosition[0])
+    switch(scaleSwitchChannel(ManualControlSettings::CHANNELMIN_FLIGHTMODE,manualSettingsObj->getData().FlightModeNumber))
     {
+    case 0:
         m_txFlightMode->setElementId("flightModeLeft");
-        m_txFlightMode->setTransform(m_txFlightModeLOrig,false);
-    }
-    else if (flightStatusData.FlightMode==manualSettingsData.FlightModePosition[1])
-    {
+        m_txFlightMode->setTransform(m_txFlightModeLOrig, false);
+        break;
+    case 1:
         m_txFlightMode->setElementId("flightModeCenter");
-        m_txFlightMode->setTransform(m_txFlightModeCOrig,false);
-    }
-    else if (flightStatusData.FlightMode==manualSettingsData.FlightModePosition[2])
-    {
+        m_txFlightMode->setTransform(m_txFlightModeCOrig, false);
+        break;
+    case 2:
         m_txFlightMode->setElementId("flightModeRight");
-        m_txFlightMode->setTransform(m_txFlightModeROrig,false);
+        m_txFlightMode->setTransform(m_txFlightModeROrig, false);
+        break;
+    default:
+        break;
     }
-    m_txAccess0->setTransform(QTransform(m_txAccess0Orig).translate(accessoryDesiredData0.AccessoryVal*ACCESS_MAX_MOVE*10,0),false);
-    m_txAccess1->setTransform(QTransform(m_txAccess1Orig).translate(accessoryDesiredData1.AccessoryVal*ACCESS_MAX_MOVE*10,0),false);
-    m_txAccess2->setTransform(QTransform(m_txAccess2Orig).translate(accessoryDesiredData2.AccessoryVal*ACCESS_MAX_MOVE*10,0),false);
+    switch(scaleSwitchChannel(ManualControlSettings::CHANNELMIN_ARMING, 2))
+    {
+    case 0:
+        m_txArming->setElementId("armedswitchleft");
+        m_txArming->setTransform(m_txArmingSwitchOrigL, false);
+        break;
+    case 1:
+        m_txArming->setElementId("armedswitchright");
+        m_txArming->setTransform(m_txArmingSwitchOrigR, false);
+        break;
+    default:
+        break;
+    }
+    m_txAccess0->setTransform(QTransform(m_txAccess0Orig).translate(accessoryDesiredData0.AccessoryVal * ACCESS_MAX_MOVE * 10, 0), false);
+    m_txAccess1->setTransform(QTransform(m_txAccess1Orig).translate(accessoryDesiredData1.AccessoryVal * ACCESS_MAX_MOVE * 10, 0), false);
+    m_txAccess2->setTransform(QTransform(m_txAccess2Orig).translate(accessoryDesiredData2.AccessoryVal * ACCESS_MAX_MOVE * 10, 0), false);
 }
 
 void ConfigInputWidget::dimOtherControls(bool value)
@@ -1222,6 +1324,7 @@ void ConfigInputWidget::dimOtherControls(bool value)
     m_txAccess1->setOpacity(opac);
     m_txAccess2->setOpacity(opac);
     m_txFlightMode->setOpacity(opac);
+    m_txArming->setOpacity(opac);
 }
 
 void ConfigInputWidget::enableControls(bool enable)
@@ -1254,18 +1357,25 @@ void ConfigInputWidget::invertControls()
     }
     manualSettingsObj->setData(manualSettingsData);
 }
-
-void ConfigInputWidget::moveFMSlider()
+/**
+ * @brief Converts a raw Switch Channel value into a Switch position index
+ * @param channelNumber channel number to convert
+ * @param switchPositions total switch positions
+ * @return Switch position index converted from the raw value
+ */
+quint8 ConfigInputWidget::scaleSwitchChannel(quint8 channelNumber, quint8 switchPositions)
 {
+    if(channelNumber > (ManualControlSettings::CHANNELMIN_NUMELEM - 1))
+            return 0;
     ManualControlSettings::DataFields manualSettingsDataPriv = manualSettingsObj->getData();
     ManualControlCommand::DataFields manualCommandDataPriv = manualCommandObj->getData();
 
     float valueScaled;
-    int chMin = manualSettingsDataPriv.ChannelMin[ManualControlSettings::CHANNELMIN_FLIGHTMODE];
-    int chMax = manualSettingsDataPriv.ChannelMax[ManualControlSettings::CHANNELMAX_FLIGHTMODE];
-    int chNeutral = manualSettingsDataPriv.ChannelNeutral[ManualControlSettings::CHANNELNEUTRAL_FLIGHTMODE];
+    int chMin = manualSettingsDataPriv.ChannelMin[channelNumber];
+    int chMax = manualSettingsDataPriv.ChannelMax[channelNumber];
+    int chNeutral = manualSettingsDataPriv.ChannelNeutral[channelNumber];
 
-    int value = manualCommandDataPriv.Channel[ManualControlSettings::CHANNELMIN_FLIGHTMODE];
+    int value = manualCommandDataPriv.Channel[channelNumber];
     if ((chMax > chMin && value >= chNeutral) || (chMin > chMax && value <= chNeutral))
     {
         if (chMax != chNeutral)
@@ -1281,19 +1391,23 @@ void ConfigInputWidget::moveFMSlider()
             valueScaled = 0;
     }
 
-    // Bound and scale FlightMode from [-1..+1] to [0..1] range
     if (valueScaled < -1.0)
         valueScaled = -1.0;
     else
     if (valueScaled >  1.0)
         valueScaled =  1.0;
 
-    // Convert flightMode value into the switch position in the range [0..N-1]
+    // Convert channel value into the switch position in the range [0..N-1]
     // This uses the same optimized computation as flight code to be consistent
-    uint8_t pos = ((int16_t)(valueScaled * 256) + 256) * manualSettingsDataPriv.FlightModeNumber >> 9;
-    if (pos >= manualSettingsDataPriv.FlightModeNumber)
-        pos = manualSettingsDataPriv.FlightModeNumber - 1;
-    m_config->fmsSlider->setValue(pos);
+    quint8 pos = ((qint16)(valueScaled * 256) + 256) * switchPositions >> 9;
+    if (pos >= switchPositions)
+        pos = switchPositions - 1;
+    return pos;
+}
+
+void ConfigInputWidget::moveFMSlider()
+{
+    m_config->fmsSlider->setValue(scaleSwitchChannel(ManualControlSettings::CHANNELMIN_FLIGHTMODE, manualSettingsObj->getData().FlightModeNumber));
 }
 
 void ConfigInputWidget::updatePositionSlider()
@@ -1352,7 +1466,7 @@ void ConfigInputWidget::updatePositionSlider()
 void ConfigInputWidget::updateCalibration()
 {
     manualCommandData=manualCommandObj->getData();
-    for(uint i=0;i<ManualControlSettings::CHANNELMAX_NUMELEM;++i)
+    for(quint8 i=0;i<ManualControlSettings::CHANNELMAX_NUMELEM;++i)
     {
         if((!reverse[i] && manualSettingsData.ChannelMin[i]>manualCommandData.Channel[i]) ||
                 (reverse[i] && manualSettingsData.ChannelMin[i]<manualCommandData.Channel[i]))

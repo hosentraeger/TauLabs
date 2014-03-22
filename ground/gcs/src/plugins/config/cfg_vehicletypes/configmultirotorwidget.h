@@ -35,7 +35,7 @@
 #include "uavobjectmanager.h"
 #include "uavobject.h"
 #include "uavtalk/telemetrymanager.h"
-#include <QtGui/QWidget>
+#include <QWidget>
 #include <QList>
 #include <QItemDelegate>
 
@@ -78,7 +78,6 @@ private slots:
     void refreshAirframeWidgetsValues(SystemSettings::AirframeTypeOptions frameType);
     virtual SystemSettings::AirframeTypeOptions updateConfigObjectsFromWidgets();
     virtual bool throwConfigError(int numMotors);
-
 
 protected:
 

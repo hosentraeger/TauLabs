@@ -1,7 +1,7 @@
 /**
  ******************************************************************************
  * @file       telemetryschedulergadgetwidget.cpp
- * @author     Tau Labs, http://www.taulabls.org Copyright (C) 2013.
+ * @author     Tau Labs, http://taulabs.org Copyright (C) 2013.
  * @addtogroup Telemetry Scheduler GCS Plugins
  * @{
  * @addtogroup TelemetrySchedulerGadgetPlugin Telemetry Scheduler Gadget Plugin
@@ -39,11 +39,11 @@
 #include <QFileInfo>
 #include <QFileDialog>
 #include <QScrollBar>
-#include <QtGui/QWidget>
-#include <QtGui/QTextEdit>
-#include <QtGui/QVBoxLayout>
-#include <QtGui/QPushButton>
-#include <QtCore/QFileInfo>
+#include <QWidget>
+#include <QTextEdit>
+#include <QVBoxLayout>
+#include <QPushButton>
+#include <QFileInfo>
 #include <QInputDialog>
 
 #include "extensionsystem/pluginmanager.h"
@@ -54,12 +54,19 @@
 #include "uavobjectutil/uavobjectutilmanager.h"
 #include "../../../../../build/ground/gcs/gcsversioninfo.h"
 #include <coreplugin/coreconstants.h>
-
+#include <coreplugin/generalsettings.h>
+#include <QMenu>
 
 TelemetrySchedulerGadgetWidget::TelemetrySchedulerGadgetWidget(QWidget *parent) : QWidget(parent)
 {
     m_telemetryeditor = new Ui_TelemetryScheduler();
     m_telemetryeditor->setupUi(this);
+
+    // In case GCS is not in expert mode, hide the apply button
+    ExtensionSystem::PluginManager *pm=ExtensionSystem::PluginManager::instance();
+    Core::Internal::GeneralSettings * settings=pm->getObject<Core::Internal::GeneralSettings>();
+    if(!settings->useExpertMode())
+        m_telemetryeditor->bnApplySchedule->setVisible(false);
 
     schedulerModel = new SchedulerModel(0, 0, this); //0 Rows and 0 Columns
 
@@ -67,7 +74,7 @@ TelemetrySchedulerGadgetWidget::TelemetrySchedulerGadgetWidget(QWidget *parent) 
     telemetryScheduleView->setObjectName(QString::fromUtf8("telemetryScheduleView"));
     telemetryScheduleView->setAlternatingRowColors(true);
     telemetryScheduleView->horizontalHeader()->setCascadingSectionResizes(false);
-    telemetryScheduleView->horizontalHeader()->setMovable(true);
+    telemetryScheduleView->horizontalHeader()->setSectionsMovable(true);
 
 
     // The dummy table exists only to force the other widgets into the correct place.
@@ -91,12 +98,12 @@ TelemetrySchedulerGadgetWidget::TelemetrySchedulerGadgetWidget(QWidget *parent) 
     connect(m_telemetryeditor->bnAddTelemetryColumn, SIGNAL(clicked()), this, SLOT(addTelemetryColumn()));
     connect(m_telemetryeditor->bnRemoveTelemetryColumn, SIGNAL(clicked()), this, SLOT(removeTelemetryColumn()));
     connect(schedulerModel, SIGNAL(itemChanged(QStandardItem *)), this, SLOT(dataModel_itemChanged(QStandardItem *)));
-    connect(telemetryScheduleView->horizontalHeader(),SIGNAL(sectionDoubleClicked(int)), this,SLOT(changeHorizontalHeader(int)));
-    connect(telemetryScheduleView->verticalHeader(),SIGNAL(sectionDoubleClicked(int)), this,SLOT(changeVerticalHeader(int)));
+    connect(telemetryScheduleView->horizontalHeader(), SIGNAL(sectionDoubleClicked(int)), this, SLOT(changeHorizontalHeader(int)));
+    connect(telemetryScheduleView->verticalHeader(), SIGNAL(sectionDoubleClicked(int)), this, SLOT(changeVerticalHeader(int)));
+    connect(telemetryScheduleView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(customMenuRequested(QPoint)));
+    telemetryScheduleView->setContextMenuPolicy(Qt::CustomContextMenu);
 
     // Generate the list of UAVOs on left side
-    ExtensionSystem::PluginManager *pm = ExtensionSystem::PluginManager::instance();
-    Q_ASSERT(pm != NULL);
     objManager = pm->getObject<UAVObjectManager>();
     Q_ASSERT(objManager != NULL);
 
@@ -126,7 +133,7 @@ TelemetrySchedulerGadgetWidget::TelemetrySchedulerGadgetWidget(QWidget *parent) 
     int columnIndex = 0;
     foreach(QString header, columnHeaders ){
         schedulerModel->setHorizontalHeaderItem(columnIndex, new QStandardItem(header));
-        telemetryScheduleView->getFrozenModel()->setHorizontalHeaderItem(columnIndex, new QStandardItem(header));
+        telemetryScheduleView->setHorizontalHeaderItem(columnIndex, new QStandardItem(header));
         telemetryScheduleView->setColumnWidth(columnIndex, 100); // 65 pixels is wide enough for the string "65535", but we set 100 for the column headers
         columnIndex++;
     }
@@ -223,7 +230,7 @@ void TelemetrySchedulerGadgetWidget::dataModel_itemChanged(QStandardItem *item)
         QString uavObjectName = schedulerModel->verticalHeaderItem(i)->text();
         UAVObject *obj = objManager->getObject(uavObjectName);
         Q_ASSERT(obj);
-        uint16_t size = obj->getNumBytes();
+        quint16 size = obj->getNumBytes();
 
         // Get UAVO speed
         QModelIndex index = schedulerModel->index(i, col, QModelIndex());
@@ -318,7 +325,7 @@ void TelemetrySchedulerGadgetWidget::saveTelemetryToFile()
         // save file
         QFile file(filename);
         if (file.open(QIODevice::WriteOnly) &&
-                (file.write(xml.toAscii()) != -1)) {
+                (file.write(xml.toLatin1()) != -1)) {
             file.close();
         } else {
             QMessageBox::critical(0,
@@ -463,13 +470,13 @@ void TelemetrySchedulerGadgetWidget::importTelemetryConfiguration(const QString&
     new_columnHeaders.insert(1, "Current");
 
     //Remove old columns
-    schedulerModel->removeColumns(2, columnHeaders.length(), QModelIndex());
-    telemetryScheduleView->getFrozenModel()->removeColumns(2, columnHeaders.length(), QModelIndex());
+    schedulerModel->removeColumns(2, columnHeaders.length()-2, QModelIndex());
+    telemetryScheduleView->removeColumns(2, columnHeaders.length()-2, QModelIndex());
 
     // Add new ones
     schedulerModel->setHorizontalHeaderLabels(new_columnHeaders); //<-- TODO: Reimplement this function if possible, so that when a new column is added it automatically updates a list of columns
     for(int columnIndex = 0; columnIndex< new_columnHeaders.length(); columnIndex++){
-        telemetryScheduleView->getFrozenModel()->setHorizontalHeaderItem(columnIndex, new QStandardItem(""));
+        telemetryScheduleView->setHorizontalHeaderItem(columnIndex, new QStandardItem(""));
         telemetryScheduleView->setColumnWidth(columnIndex, 100); // 65 pixels is wide enough for the string "65535", but we set 100 for the column headers
     }
 
@@ -529,8 +536,8 @@ void TelemetrySchedulerGadgetWidget::importTelemetryConfiguration(const QString&
 
                     // Load the config file values into the table
                     for (int j=0; j<valuesList.length(); j++){
-                        QModelIndex index = schedulerModel->index(row, j+1, QModelIndex());
-                        uint32_t val = valuesList.at(j).toUInt();
+                        QModelIndex index = schedulerModel->index(row, j+2, QModelIndex());
+                        quint32 val = stripMs(valuesList[j]);
                         if(val == 0){
                             // If it's 0, do nothing, since a blank cell indicates a default.
                         }
@@ -556,7 +563,7 @@ void TelemetrySchedulerGadgetWidget::addTelemetryColumn()
     int newColumnIndex = schedulerModel->columnCount();
     QString newColumnString = "New Column";
     schedulerModel->setHorizontalHeaderItem(newColumnIndex, new QStandardItem(newColumnString));
-    telemetryScheduleView->getFrozenModel()->setHorizontalHeaderItem(newColumnIndex, new QStandardItem(""));
+    telemetryScheduleView->setHorizontalHeaderItem(newColumnIndex, new QStandardItem(""));
     telemetryScheduleView->setColumnWidth(newColumnIndex, 65); // 65 pixels is wide enough for the string "65535"
 
     columnHeaders.append(newColumnString);
@@ -572,7 +579,7 @@ void TelemetrySchedulerGadgetWidget::removeTelemetryColumn()
 {
     int oldColumnIndex = schedulerModel->columnCount();
     schedulerModel->removeColumns(oldColumnIndex-1, 1);
-    telemetryScheduleView->getFrozenModel()->removeColumns(oldColumnIndex-1, 1);
+    telemetryScheduleView->removeColumns(oldColumnIndex-1, 1);
 
     columnHeaders.pop_back();
     m_telemetryeditor->cmbScheduleList->clear();
@@ -599,6 +606,31 @@ void TelemetrySchedulerGadgetWidget::changeHorizontalHeader(int headerIndex)
     m_telemetryeditor->cmbScheduleList->addItems(columnHeaders);
 }
 
+void TelemetrySchedulerGadgetWidget::customMenuRequested(QPoint pos)
+{
+    Q_UNUSED(pos)
+    bool ok;
+    QString text = QInputDialog::getText(this, tr("Mass value filling"),
+                                         tr("Choose value to use"), QLineEdit::Normal,
+                                         "", &ok);
+    if(!ok)
+        return;
+    text.toInt(&ok);
+    if(!ok)
+    {
+        QMessageBox msgBox;
+        msgBox.setText("Value must be numeric");
+        msgBox.exec();
+        return;
+    }
+    if (!text.isEmpty())
+    {
+        foreach (QModelIndex index , telemetryScheduleView->selectionModel()->selectedIndexes()) {
+            telemetryScheduleView->model()->setData(index,text);
+        }
+    }
+}
+
 
 /**
  * @brief TelemetrySchedulerGadgetWidget::changeVerticalHeader
@@ -613,6 +645,7 @@ void TelemetrySchedulerGadgetWidget::changeVerticalHeader(int headerIndex)
     UAVObject::Metadata mdata = uavObj->getMetadata();
 
     MetadataDialog metadataDialog(mdata);
+    metadataDialog.setWindowTitle(QString(uavObj->getName() + " settings"));
 
     if (metadataDialog.exec() != QDialog::Accepted )
         return;
@@ -625,7 +658,16 @@ void TelemetrySchedulerGadgetWidget::changeVerticalHeader(int headerIndex)
         newMetadata.flightTelemetryUpdatePeriod = mdata.flightTelemetryUpdatePeriod;
     }
 
+    // Update metadata, and save if necessary
     uavObj->setMetadata(newMetadata);
+    if (metadataDialog.getSaveState_flag())
+    {
+        UAVDataObject * obj = dynamic_cast<UAVDataObject*>(objManager->getObject(uavObjectName));
+        if (obj) {
+            UAVMetaObject * meta = obj->getMetaObject();
+            getObjectUtilManager()->saveObjectToFlash(meta);
+        }
+    }
 }
 
 /**
@@ -899,7 +941,7 @@ void QFrozenTableViewWithCopyPaste::init()
     frozenTableView->setModel(frozenModel);
     frozenTableView->setFocusPolicy(Qt::NoFocus);
     frozenTableView->horizontalHeader()->hide();
-    frozenTableView->verticalHeader()->setResizeMode(QHeaderView::Fixed);
+    frozenTableView->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
 
     viewport()->stackUnder(frozenTableView);
 
@@ -936,6 +978,7 @@ void QFrozenTableViewWithCopyPaste::init()
 void QFrozenTableViewWithCopyPaste::updateSectionWidth(int logicalIndex, int, int newSize)
 {
     frozenTableView->setColumnWidth(logicalIndex,newSize);
+    updateFrozenTableGeometry();
 }
 
 void QFrozenTableViewWithCopyPaste::updateSectionHeight(int logicalIndex, int, int newSize)
@@ -961,11 +1004,41 @@ void QFrozenTableViewWithCopyPaste::scrollTo (const QModelIndex & index, ScrollH
 
 void QFrozenTableViewWithCopyPaste::updateFrozenTableGeometry()
 {
-    frozenTableView->setGeometry( frameWidth(),
-                                  horizontalHeader()->height()+frameWidth(),
-                                  viewport()->width()+verticalHeader()->width(),
+    int col_width = 0;
+    for(int i = 0;i< this->model()->columnCount();++i)
+    {
+        col_width += columnWidth(i);
+    }
+    frozenTableView->setGeometry(frameWidth(),
+                                  horizontalHeader()->height() + frameWidth(),
+                                  verticalHeader()->width() + col_width,
                                   rowHeight(0));
 }
+
+
+/**
+ * @brief QFrozenTableViewWithCopyPaste::setHorizontalHeaderItem Ensures that the frozen table geometry is
+ * updated when calling QStandardItemModel::setHorizontalHeaderItem()
+ */
+void QFrozenTableViewWithCopyPaste::setHorizontalHeaderItem(int column, QStandardItem *item)
+{
+    frozenModel->setHorizontalHeaderItem(column, item);
+    updateFrozenTableGeometry();
+}
+
+
+/**
+ * @brief QFrozenTableViewWithCopyPaste::removeColumns Ensures that the frozen table geometry is
+ * updated when calling QStandardItemModel::removeColumns()
+ */
+bool QFrozenTableViewWithCopyPaste::removeColumns(int column, int count, const QModelIndex &parent)
+{
+    bool ret = frozenModel->removeColumns(column, count, parent);
+    updateFrozenTableGeometry();
+
+    return ret;
+}
+
 
 /**
   * @}

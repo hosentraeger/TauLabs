@@ -27,8 +27,8 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 #include "configtaskwidget.h"
-#include <QtGui/QWidget>
-#include <QtGui/QLineEdit>
+#include <QWidget>
+#include <QLineEdit>
 #include "uavsettingsimportexport/uavsettingsimportexportfactory.h"
 
 /**
@@ -341,6 +341,8 @@ void ConfigTaskWidget::onAutopilotConnect()
     enableControls(true);
     refreshWidgetsValues();
     setDirty(false);
+
+    emit autoPilotConnected();
 }
 /**
  * SLOT Function used to populate the widgets with the initial values
@@ -490,7 +492,7 @@ void ConfigTaskWidget::forceShadowUpdates()
 void ConfigTaskWidget::widgetsContentsChanged()
 {
     emit widgetContentsChanged((QWidget*)sender());
-    double scale;
+    double scale = 0;
     objectToWidget * oTw= shadowsList.value((QWidget*)sender(),NULL);
     if(oTw)
     {
@@ -991,8 +993,10 @@ void ConfigTaskWidget::connectWidgetUpdatesToSlot(QWidget * widget,const char* f
         connect(cb,SIGNAL(clicked()),this,function);
     }
     else if(qobject_cast<QLabel *>(widget))
-    {
-
+    { // Nothing to connect
+    }
+    else if(qobject_cast<QLineEdit *>(widget))
+    { // Nothing to connect
     }
     else
         qDebug() << __FUNCTION__ << "widget to uavobject relation not implemented for widget: " << widget->objectName()  << "of class:" << widget->metaObject()->className();
@@ -1040,6 +1044,12 @@ void ConfigTaskWidget::disconnectWidgetUpdatesToSlot(QWidget * widget,const char
     else if(QPushButton * cb=qobject_cast<QPushButton *>(widget))
     {
         disconnect(cb,SIGNAL(clicked()),this,function);
+    }
+    else if(qobject_cast<QLabel *>(widget))
+    { // Nothing to disconnect
+    }
+    else if(qobject_cast<QLineEdit *>(widget))
+    { // Nothing to disconnect
     }
     else
         qDebug() << __FUNCTION__ << "widget to uavobject relation not implemented for widget: " << widget->objectName()  << "of class:" << widget->metaObject()->className();

@@ -89,6 +89,7 @@
 #include <pios_adc.h>
 #include <pios_internal_adc.h>
 #include <pios_servo.h>
+#include <pios_brushless.h>
 #include <pios_rtc.h>
 #include <pios_i2c.h>
 #include <pios_can.h>
@@ -112,6 +113,7 @@
 #include <pios_wdg.h>
 
 /* PIOS Hardware Includes (Common) */
+#include <pios_heap.h>
 #include <pios_sdcard.h>
 #include <pios_com.h>
 #if defined(PIOS_INCLUDE_MPXV7002)
@@ -131,9 +133,6 @@
 #endif
 #if defined(PIOS_INCLUDE_HMC5843)
 #include <pios_hmc5843.h>
-#endif
-#if defined(PIOS_INCLUDE_HMC5883)
-#include <pios_hmc5883.h>
 #endif
 #if defined(PIOS_INCLUDE_HMC5983)
 #include <pios_hmc5983.h>
@@ -204,6 +203,11 @@
 #include <pios_crc.h>
 
 #define NELEMENTS(x) (sizeof(x) / sizeof(*(x)))
+
+// portTICK_RATE_MS is in [ms/tick].
+// See http://sourceforge.net/tracker/?func=detail&aid=3498382&group_id=111543&atid=659636
+#define TICKS2MS(t)	((t) * (portTICK_RATE_MS))
+#define MS2TICKS(m)	((m) / (portTICK_RATE_MS))
 
 #endif /* PIOS_H */
 

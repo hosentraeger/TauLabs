@@ -90,6 +90,7 @@ static float gyro_coeff_x[4] = {0,0,0,0};
 static float gyro_coeff_y[4] = {0,0,0,0};
 static float gyro_coeff_z[4] = {0,0,0,0};
 static float gyro_temp_bias[3] = {0,0,0};
+static float z_accel_offset = 0;
 static float Rsb[3][3] = {{0}}; //! Rotation matrix that transforms from the body frame to the sensor board frame
 static int8_t rotate = 0;
 
@@ -170,7 +171,7 @@ static void SensorsTask(void *parameters)
 			PIOS_WDG_UpdateFlag(PIOS_WDG_SENSORS);
 			lastSysTime = xTaskGetTickCount();
 			AlarmsSet(SYSTEMALARMS_ALARM_SENSORS, SYSTEMALARMS_ALARM_CRITICAL);
-			vTaskDelayUntil(&lastSysTime, SENSOR_PERIOD / portTICK_RATE_MS);
+			vTaskDelayUntil(&lastSysTime, MS2TICKS(SENSOR_PERIOD));
 		}
 
 		struct pios_sensor_gyro_data gyros;
@@ -249,6 +250,8 @@ static void update_accels(struct pios_sensor_accel_data *accels)
 		accelsData.z = accels_out[2];
 	}
 
+	accelsData.z += z_accel_offset;
+
 	accelsData.temperature = accels->temperature;
 	AccelsSet(&accelsData);
 }
@@ -267,8 +270,17 @@ static void update_gyros(struct pios_sensor_gyro_data *gyros)
 	};
 
 	GyrosData gyrosData;
-
 	gyrosData.temperature = gyros->temperature;
+
+	// Update the bias due to the temperature
+	updateTemperatureComp(gyrosData.temperature, gyro_temp_bias);
+
+	// Apply temperature bias correction before the rotation
+	if (bias_correct_gyro) {
+		gyros_out[0] -= gyro_temp_bias[0];
+		gyros_out[1] -= gyro_temp_bias[1];
+		gyros_out[2] -= gyro_temp_bias[2];
+	}
 
 	if (rotate) {
 		float gyros[3];
@@ -282,16 +294,13 @@ static void update_gyros(struct pios_sensor_gyro_data *gyros)
 		gyrosData.z = gyros_out[2];
 	}
 
-	// Update the bias due to the temperature
-	updateTemperatureComp(gyrosData.temperature, gyro_temp_bias);
-	
 	if (bias_correct_gyro) {
 		// Apply bias correction to the gyros from the state estimator
 		GyrosBiasData gyrosBias;
 		GyrosBiasGet(&gyrosBias);
-		gyrosData.x -= gyrosBias.x + gyro_temp_bias[0];
-		gyrosData.y -= gyrosBias.y + gyro_temp_bias[1];
-		gyrosData.z -= gyrosBias.z + gyro_temp_bias[2];
+		gyrosData.x -= gyrosBias.x;
+		gyrosData.y -= gyrosBias.y;
+		gyrosData.z -= gyrosBias.z;
 	}
 
 	GyrosSet(&gyrosData);
@@ -532,7 +541,8 @@ static void settingsUpdatedCb(UAVObjEvent * objEv)
 	gyro_coeff_z[1] =  sensorSettings.ZGyroTempCoeff[1];
 	gyro_coeff_z[2] =  sensorSettings.ZGyroTempCoeff[2];
 	gyro_coeff_z[3] =  sensorSettings.ZGyroTempCoeff[3];
-	
+	z_accel_offset  =  sensorSettings.ZAccelOffset;
+
 	// Zero out any adaptive tracking
 	MagBiasData magBias;
 	MagBiasGet(&magBias);

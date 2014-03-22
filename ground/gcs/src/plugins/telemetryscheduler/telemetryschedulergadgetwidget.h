@@ -1,7 +1,7 @@
 /**
  ******************************************************************************
  * @file       telemetryschedulergadgetwidget.h
- * @author     Tau Labs, http://www.taulabls.org Copyright (C) 2013.
+ * @author     Tau Labs, http://taulabs.org Copyright (C) 2013.
  * @addtogroup Telemetry Scheduler GCS Plugins
  * @{
  * @addtogroup TelemetrySchedulerGadgetPlugin Telemetry Scheduler Gadget Plugin
@@ -32,7 +32,7 @@
 #include <QTableView>
 #include <QStandardItemModel>
 #include <QItemDelegate>
-#include <QtGui/QLabel>
+#include <QLabel>
 
 #include "uavobjectutil/uavobjectutilmanager.h"
 #include "extensionsystem/pluginmanager.h"
@@ -73,6 +73,7 @@ private slots:
     void removeTelemetryColumn();
     void changeVerticalHeader(int);
     void changeHorizontalHeader(int);
+    void customMenuRequested(QPoint pos);
 private:
     int stripMs(QVariant rate_ms);
 
@@ -136,6 +137,8 @@ public:
 
     QStandardItemModel *getFrozenModel(){return frozenModel;}
     QTableView *getFrozenTableView(){return frozenTableView;}
+    void setHorizontalHeaderItem(int column, QStandardItem *item);
+    bool removeColumns(int column, int count, const QModelIndex &parent = QModelIndex());
 
 protected:
     virtual void keyPressEvent(QKeyEvent * event);

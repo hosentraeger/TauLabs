@@ -29,12 +29,14 @@ import java.util.Observer;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import org.taulabs.androidgcs.R;
+import org.taulabs.androidgcs.drawer.NavDrawerActivityConfiguration;
 import org.taulabs.uavtalk.UAVDataObject;
 import org.taulabs.uavtalk.UAVObject;
 import org.taulabs.uavtalk.UAVObjectField;
 
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -67,13 +69,36 @@ public class Controller extends ObjectManagerActivity {
 
 	Timer sendTimer = new Timer();
 
+	int orientation;
+
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.controller);
+
+		if(getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+			orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+		} else
+			orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+		setRequestedOrientation(orientation);
+		//setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_NOSENSOR);
 	}
 
+	@Override
+	protected NavDrawerActivityConfiguration getNavDrawerConfiguration() {
+		NavDrawerActivityConfiguration navDrawer = getDefaultNavDrawerConfiguration();
+		navDrawer.setMainLayout(R.layout.controller);
+		return navDrawer;
+	}
+
+	@Override
+	public void onConfigurationChanged(Configuration newConfig) {
+	    super.onConfigurationChanged(newConfig);
+	    Log.d(TAG, "Configuration changed");
+	    setRequestedOrientation(orientation);
+
+	    //here you can handle orientation change
+	}
 	Observer settingsUpdated = new Observer() {
 		@Override
 		public void update(Observable observable, Object data) {
@@ -88,10 +113,10 @@ public class Controller extends ObjectManagerActivity {
 	};
 
 	@Override
-	void onOPConnected() {
-		super.onOPConnected();
+	void onConnected() {
+		super.onConnected();
 
-		if (DEBUG) Log.d(TAG, "onOPConnected()");
+		if (DEBUG) Log.d(TAG, "onConnected()");
 
 		DualJoystickView joystick = (DualJoystickView) findViewById(R.id.dualjoystickView);
 		joystick.setMovementConstraint(JoystickView.CONSTRAIN_BOX);

@@ -141,6 +141,7 @@ static void SensorsTask(void *parameters)
 //	HomeLocationSet(&homeLocation);
 
 
+	PIOS_SENSORS_SetMaxGyro(500);
 	// Main task loop
 	while (1) {
 		PIOS_WDG_UpdateFlag(PIOS_WDG_SENSORS);
@@ -194,7 +195,7 @@ static void SensorsTask(void *parameters)
 				simulateModelCar();
 		}
 
-		vTaskDelay(2 / portTICK_RATE_MS);
+		vTaskDelay(MS2TICKS(2));
 
 	}
 }
@@ -461,6 +462,12 @@ static void simulateModelQuadcopter()
 	
 	HomeLocationData homeLocation;
 	HomeLocationGet(&homeLocation);
+	if (homeLocation.Set == HOMELOCATION_SET_FALSE) {
+		homeLocation.Be[0] = 100;
+		homeLocation.Be[1] = 0;
+		homeLocation.Be[2] = 400;
+		homeLocation.Set = HOMELOCATION_SET_TRUE;
+	}
 
 	static float gps_vel_drift[3] = {0,0,0};
 	gps_vel_drift[0] = gps_vel_drift[0] * 0.65 + rand_gauss() / 5.0;
@@ -754,6 +761,12 @@ static void simulateModelAirplane()
 	
 	HomeLocationData homeLocation;
 	HomeLocationGet(&homeLocation);
+	if (homeLocation.Set == HOMELOCATION_SET_FALSE) {
+		homeLocation.Be[0] = 100;
+		homeLocation.Be[1] = 0;
+		homeLocation.Be[2] = 400;
+		homeLocation.Set = HOMELOCATION_SET_TRUE;
+	}
 	
 	static float gps_vel_drift[3] = {0,0,0};
 	gps_vel_drift[0] = gps_vel_drift[0] * 0.65 + rand_gauss() / 5.0;
@@ -1005,6 +1018,12 @@ static void simulateModelCar()
 	
 	HomeLocationData homeLocation;
 	HomeLocationGet(&homeLocation);
+	if (homeLocation.Set == HOMELOCATION_SET_FALSE) {
+		homeLocation.Be[0] = 100;
+		homeLocation.Be[1] = 0;
+		homeLocation.Be[2] = 400;
+		homeLocation.Set = HOMELOCATION_SET_TRUE;
+	}
 	
 	static float gps_vel_drift[3] = {0,0,0};
 	gps_vel_drift[0] = gps_vel_drift[0] * 0.65 + rand_gauss() / 5.0;

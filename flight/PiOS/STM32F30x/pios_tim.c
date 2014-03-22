@@ -8,7 +8,7 @@
  *
  * @file       pios_tim.c  
  * @author     The OpenPilot Team, http://www.openpilot.org Copyright (C) 2012.
- * @author     Tau Labs, http://taulabs.org, Copyright (C) 2012-2013
+ * @author     Tau Labs, http://taulabs.org, Copyright (C) 2012-2014
  * @brief      Sets up timers and ways to register callbacks on them
  * @see        The GNU Public License (GPL) Version 3
  *
@@ -49,25 +49,6 @@ struct pios_tim_dev {
 	uintptr_t context;
 };
 
-#if 0
-static bool PIOS_TIM_validate(struct pios_tim_dev * tim_dev)
-{
-	return (tim_dev->magic == PIOS_TIM_DEV_MAGIC);
-}
-#endif
-
-#if defined(PIOS_INCLUDE_FREERTOS) && 0
-static struct pios_tim_dev * PIOS_TIM_alloc(void)
-{
-	struct pios_tim_dev * tim_dev;
-
-	tim_dev = (struct pios_tim_dev *)pvPortMalloc(sizeof(*tim_dev));
-	if (!tim_dev) return(NULL);
-
-	tim_dev->magic = PIOS_TIM_DEV_MAGIC;
-	return(tim_dev);
-}
-#else
 static struct pios_tim_dev pios_tim_devs[PIOS_TIM_MAX_DEVS];
 static uint8_t pios_tim_num_devs;
 static struct pios_tim_dev * PIOS_TIM_alloc(void)
@@ -83,10 +64,6 @@ static struct pios_tim_dev * PIOS_TIM_alloc(void)
 
 	return (tim_dev);
 }
-#endif
-
-
-
 
 int32_t PIOS_TIM_InitClock(const struct pios_tim_clock_cfg * cfg)
 {
@@ -389,7 +366,7 @@ static void PIOS_TIM_1_UP_TIM_16_irq_handler (void)
 void TIM1_TRG_COM_TIM17_IRQHandler(void) __attribute__ ((alias ("PIOS_TIM_1_TRG_COM_TIM_17_irq_handler")));
 static void PIOS_TIM_1_TRG_COM_TIM_17_irq_handler(void)
 {
-	if (TIM_GetITStatus(TIM1, TIM_IT_Trigger)) {
+	if (TIM_GetITStatus(TIM1, TIM_IT_Trigger | TIM_IT_COM)) {
 		PIOS_TIM_generic_irq_handler(TIM1);
 	} else if (TIM_GetITStatus(TIM17, TIM_IT_Update | TIM_IT_CC1 | TIM_IT_CC2 | TIM_IT_CC3 | TIM_IT_CC4 | TIM_IT_COM | TIM_IT_Trigger | TIM_IT_Break)) {
 		PIOS_TIM_generic_irq_handler(TIM17);

@@ -33,6 +33,7 @@
 #if defined(PIOS_INCLUDE_FLASH_JEDEC)
 
 #include "pios_flash_jedec_priv.h"
+#include "pios_semaphore.h"
 
 #define JEDEC_WRITE_ENABLE           0x06
 #define JEDEC_WRITE_DISABLE          0x04
@@ -60,16 +61,13 @@ enum pios_jedec_dev_magic {
 struct jedec_flash_dev {
 	uint32_t spi_id;
 	uint32_t slave_num;
-	bool claimed;
 
 	uint8_t manufacturer;
 	uint8_t memorytype;
 	uint8_t capacity;
 
 	const struct pios_flash_jedec_cfg *cfg;
-#if defined(FLASH_FREERTOS)
-	xSemaphoreHandle transaction_lock;
-#endif
+	struct pios_semaphore *transaction_lock;
 	enum pios_jedec_dev_magic magic;
 };
 
@@ -84,7 +82,6 @@ static int32_t PIOS_Flash_Jedec_ReleaseBus(struct jedec_flash_dev *flash_dev);
 static int32_t PIOS_Flash_Jedec_WriteEnable(struct jedec_flash_dev *flash_dev);
 static int32_t PIOS_Flash_Jedec_Busy(struct jedec_flash_dev *flash_dev);
 
-#if defined(PIOS_INCLUDE_FREERTOS)
 /**
  * @brief Allocate a new device
  */
@@ -92,32 +89,13 @@ static struct jedec_flash_dev *PIOS_Flash_Jedec_alloc(void)
 {
 	struct jedec_flash_dev *flash_dev;
 
-	flash_dev = (struct jedec_flash_dev *)pvPortMalloc(sizeof(*flash_dev));
+	flash_dev = (struct jedec_flash_dev *)PIOS_malloc(sizeof(*flash_dev));
 	if (!flash_dev) return (NULL);
 
 	flash_dev->magic = PIOS_JEDEC_DEV_MAGIC;
 
 	return(flash_dev);
 }
-#else
-#ifndef PIOS_JEDEC_MAX_DEVS
-#define PIOS_JEDEC_MAX_DEVS 1
-#endif
-static struct jedec_flash_dev pios_jedec_flash_devs[PIOS_JEDEC_MAX_DEVS];
-static uint8_t pios_jedec_flash_num_devs;
-static struct jedec_flash_dev *PIOS_Flash_Jedec_alloc(void)
-{
-	struct jedec_flash_dev *flash_dev;
-
-	if (pios_jedec_flash_num_devs >= PIOS_JEDEC_MAX_DEVS)
-		return NULL;
-
-	flash_dev = &pios_jedec_flash_devs[pios_jedec_flash_num_devs++];
-	flash_dev->magic = PIOS_JEDEC_DEV_MAGIC;
-
-	return flash_dev;
-}
-#endif	/* PIOS_INCLUDE_FREERTOS */
 
 /**
  * @brief Validate the handle to the spi device
@@ -141,10 +119,9 @@ int32_t PIOS_Flash_Jedec_Init(uintptr_t *chip_id, uint32_t spi_id, uint32_t slav
 	if (flash_dev == NULL)
 		return -1;
 
-	flash_dev->claimed = false;
-#if defined(FLASH_FREERTOS)
-	flash_dev->transaction_lock = xSemaphoreCreateMutex();
-#endif
+	flash_dev->transaction_lock = PIOS_Semaphore_Create();
+	if (flash_dev->transaction_lock == NULL)
+		return -1;
 
 	flash_dev->spi_id = spi_id;
 	flash_dev->slave_num = slave_num;
@@ -175,7 +152,6 @@ static int32_t PIOS_Flash_Jedec_ClaimBus(struct jedec_flash_dev *flash_dev)
 		return -1;
 
 	PIOS_SPI_RC_PinSet(flash_dev->spi_id, flash_dev->slave_num, 0);
-	flash_dev->claimed = true;
 
 	return 0;
 }
@@ -187,7 +163,6 @@ static int32_t PIOS_Flash_Jedec_ReleaseBus(struct jedec_flash_dev *flash_dev)
 {
 	PIOS_SPI_RC_PinSet(flash_dev->spi_id, flash_dev->slave_num, 1);
 	PIOS_SPI_ReleaseBus(flash_dev->spi_id);
-	flash_dev->claimed = false;
 	return 0;
 }
 
@@ -281,8 +256,6 @@ static int32_t PIOS_Flash_Jedec_ReadID(struct jedec_flash_dev *flash_dev)
  *********************************/
 #include "pios_flash_priv.h"
 
-#if FLASH_USE_FREERTOS_LOCKS
-
 /**
  * @brief Grab the semaphore to perform a transaction
  * @param[in] chip_id the opaque handle for the chip that this operation should be applied to
@@ -295,10 +268,8 @@ static int32_t PIOS_Flash_Jedec_StartTransaction(uintptr_t chip_id)
 	if (PIOS_Flash_Jedec_Validate(flash_dev) != 0)
 		return -1;
 
-#if defined(PIOS_INCLUDE_FREERTOS)
-	if (xSemaphoreTake(flash_dev->transaction_lock, portMAX_DELAY) != pdTRUE)
+	if (PIOS_Semaphore_Take(flash_dev->transaction_lock, PIOS_SEMAPHORE_TIMEOUT_MAX) != true)
 		return -2;
-#endif
 
 	return 0;
 }
@@ -315,27 +286,11 @@ static int32_t PIOS_Flash_Jedec_EndTransaction(uintptr_t chip_id)
 	if (PIOS_Flash_Jedec_Validate(flash_dev) != 0)
 		return -1;
 
-#if defined(PIOS_INCLUDE_FREERTOS)
-	if (xSemaphoreGive(flash_dev->transaction_lock) != pdTRUE)
+	if (PIOS_Semaphore_Give(flash_dev->transaction_lock) != true)
 		return -2;
-#endif
 
 	return 0;
 }
-
-#else  /* FLASH_USE_FREERTOS_LOCKS */
-
-static int32_t PIOS_Flash_Jedec_StartTransaction(uintptr_t chip_id)
-{
-	return 0;
-}
-
-static int32_t PIOS_Flash_Jedec_EndTransaction(uintptr_t chip_id)
-{
-	return 0;
-}
-
-#endif	/* FLASH_USE_FREERTOS_LOCKS */
 
 /**
  * @brief Erase a sector on the flash chip

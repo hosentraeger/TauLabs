@@ -29,7 +29,7 @@
 #include "modelmapproxy.h"
 #include "../pathplanner/waypointdialog.h"
 
-ModelMapProxy::ModelMapProxy(QObject *parent,OPMapWidget *map, FlightDataModel *model,QItemSelectionModel * selectionModel):QObject(parent),myMap(map),model(model),selection(selectionModel)
+ModelMapProxy::ModelMapProxy(QObject *parent,TLMapWidget *map, FlightDataModel *model,QItemSelectionModel * selectionModel):QObject(parent),myMap(map),model(model),selection(selectionModel)
 {
     connect(model,SIGNAL(rowsInserted(const QModelIndex&,int,int)),this,SLOT(rowsInserted(const QModelIndex&,int,int)));
     connect(model,SIGNAL(rowsRemoved(const QModelIndex&,int,int)),this,SLOT(rowsRemoved(const QModelIndex&,int,int)));
@@ -269,8 +269,8 @@ void ModelMapProxy::dataChanged(const QModelIndex &topLeft, const QModelIndex &b
             case FlightDataModel::MODE:
                 refreshOverlays();
                 break;
-            case FlightDataModel::WPDESCRITPTION:
-                index=model->index(x,FlightDataModel::WPDESCRITPTION);
+            case FlightDataModel::WPDESCRIPTION:
+                index=model->index(x,FlightDataModel::WPDESCRIPTION);
                 desc=index.data(Qt::DisplayRole).toString();
                 item->SetDescription(desc);
                 break;
@@ -317,9 +317,9 @@ void ModelMapProxy::rowsInserted(const QModelIndex &parent, int first, int last)
     {
         QModelIndex index;
         internals::PointLatLng latlng;
-        WayPointItem *item;
+        WayPointItem *item = NULL;
         double altitude;
-        index=model->index(x,FlightDataModel::WPDESCRITPTION);
+        index=model->index(x,FlightDataModel::WPDESCRIPTION);
         QString desc=index.data(Qt::DisplayRole).toString();
         index=model->index(x,FlightDataModel::LATPOSITION);
         latlng.SetLat(index.data(Qt::DisplayRole).toDouble());

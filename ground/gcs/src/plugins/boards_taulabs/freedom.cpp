@@ -27,6 +27,12 @@
 
 #include "freedom.h"
 
+#include <uavobjectmanager.h>
+#include "uavobjectutil/uavobjectutilmanager.h"
+#include <extensionsystem/pluginmanager.h>
+
+#include "hwfreedom.h"
+
 /**
  * @brief Freedom::Freedom
  *  This is the Freedom board definition
@@ -41,6 +47,12 @@ Freedom::Freedom(void)
     setUSBInfo(board);
 
     boardType = 0x81;
+
+    // Define the bank of channels that are connected to a given timer
+    channelBanks.resize(6);
+    channelBanks[0] = QVector<int> () << 1 << 2;
+    channelBanks[1] = QVector<int> () << 3 << 4;
+    channelBanks[2] = QVector<int> () << 6 << 7;
 }
 
 Freedom::~Freedom()
@@ -76,11 +88,6 @@ bool Freedom::queryCapabilities(BoardCapabilities capability)
     return false;
 }
 
-QStringList Freedom::queryChannelBanks()
-{
-    return QStringList(QStringList() << "1-2" << "3-4" << "6-7");
-}
-
 
 /**
  * @brief Freedom::getSupportedProtocols
@@ -101,4 +108,29 @@ QPixmap Freedom::getBoardPicture()
 QString Freedom::getHwUAVO()
 {
     return "HwFreedom";
+}
+
+int Freedom::queryMaxGyroRate()
+{
+    ExtensionSystem::PluginManager *pm = ExtensionSystem::PluginManager::instance();
+    UAVObjectManager *uavoManager = pm->getObject<UAVObjectManager>();
+    HwFreedom *hwFreedom = HwFreedom::GetInstance(uavoManager);
+    Q_ASSERT(hwFreedom);
+    if (!hwFreedom)
+        return 0;
+
+    HwFreedom::DataFields settings = hwFreedom->getData();
+
+    switch(settings.GyroRange) {
+    case HwFreedom::GYRORANGE_250:
+        return 250;
+    case HwFreedom::GYRORANGE_500:
+        return 500;
+    case HwFreedom::GYRORANGE_1000:
+        return 1000;
+    case HwFreedom::GYRORANGE_2000:
+        return 2000;
+    default:
+        return 500;
+    }
 }

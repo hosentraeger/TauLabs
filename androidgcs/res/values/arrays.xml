@@ -5,13 +5,15 @@
         <item>Bluetooth</item>
         <item>Network</item>
         <item>HID</item>
-    </string-array>
+        <item>Serial</item>
+        </string-array>
     <string-array name="connectTypeValues">
         <item>0</item>
         <item>2</item>
         <item>3</item>
         <item>4</item>
-   </string-array>
+        <item>5</item>
+        </string-array>
     <string-array name="controllerTypeArray">
         <item>Mode 1</item>
         <item>Mode 2</item>
@@ -20,4 +22,28 @@
         <item>1</item>
         <item>2</item>
    </string-array>
+    <string-array name="mapTypeArray">
+        <item>Normal</item>
+        <item>Satellite</item>
+        <item>Terrain</item>
+        <item>Hybrid</item>
+    </string-array>
+    <string-array name="mapTypeValues">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+   </string-array>
+
+   <string-array name="activities_array">
+        <item>Mercury</item>
+        <item>Venus</item>
+        <item>Earth</item>
+        <item>Mars</item>
+        <item>Jupiter</item>
+        <item>Saturn</item>
+        <item>Uranus</item>
+        <item>Neptune</item>
+    </string-array>
+    
 </resources>

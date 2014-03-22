@@ -28,12 +28,12 @@
 
 #include "opmapgadgetwidget.h"
 #include "ui_opmap_widget.h"
-
-#include <QtGui/QApplication>
-#include <QtGui/QHBoxLayout>
-#include <QtGui/QVBoxLayout>
-#include <QtGui/QClipboard>
-#include <QtGui/QMenu>
+#include <QInputDialog>
+#include <QApplication>
+#include <QHBoxLayout>
+#include <QVBoxLayout>
+#include <QClipboard>
+#include <QMenu>
 #include <QStringList>
 #include <QDir>
 #include <QFile>
@@ -151,7 +151,7 @@ OPMapGadgetWidget::OPMapGadgetWidget(QWidget *parent) : QWidget(parent)
     // **************
     // create the central map widget
 
-    m_map = new mapcontrol::OPMapWidget();	// create the map object
+    m_map = new mapcontrol::TLMapWidget();	// create the map object
 
     m_map->setFrameStyle(QFrame::NoFrame);      // no border frame
     m_map->setBackgroundBrush(QBrush(Utils::StyleHelper::baseColor())); // tile background
@@ -197,9 +197,9 @@ OPMapGadgetWidget::OPMapGadgetWidget(QWidget *parent) : QWidget(parent)
     layout->addWidget(m_map);
     m_widget->mapWidget->setLayout(layout);
 
-            m_widget->toolButtonMagicWaypointMapMode->setChecked(false);
-            m_widget->toolButtonNormalMapMode->setChecked(true);
-            hideMagicWaypointControls();
+    m_widget->toolButtonMagicWaypointMapMode->setChecked(false);
+    m_widget->toolButtonNormalMapMode->setChecked(true);
+    hideMagicWaypointControls();
 
     m_widget->labelUAVPos->setText("---");
     m_widget->labelMapPos->setText("---");
@@ -365,7 +365,7 @@ void OPMapGadgetWidget::contextMenuEvent(QContextMenuEvent *event)
 
     // ****************
     // Dynamically create the popup menu
-
+    QMenu contextMenu;
     contextMenu.addAction(closeAct1);
     contextMenu.addSeparator();
     contextMenu.addAction(reloadAct);
@@ -659,8 +659,6 @@ void OPMapGadgetWidget::updateMousePos()
     lastLatLngMouse=lat_lon;
     if (!m_map->contentsRect().contains(p))
         return;					    // the mouse is not on the map
-
-//    internals::PointLatLng lat_lon = m_map->currentMousePosition();     // fetch the current lat/lon mouse position
 
     QGraphicsItem *item = m_map->itemAt(p);
 
@@ -1095,12 +1093,17 @@ void OPMapGadgetWidget::setPosition(QPointF pos)
 
     m_map->SetCurrentPosition(internals::PointLatLng(latitude, longitude));
 }
+void OPMapGadgetWidget::setGeoCodingLanguage(QString language)
+{
+    if (!m_widget || !m_map)
+        return;
+    m_map->configuration->SetLanguage(mapcontrol::Helper::LanguageTypeFromString(language));
+}
 
 void OPMapGadgetWidget::setMapProvider(QString provider)
 {
 	if (!m_widget || !m_map)
 		return;
-//
     m_map->SetMapType(mapcontrol::Helper::MapTypeFromString(provider));
 }
 
@@ -1696,7 +1699,7 @@ void OPMapGadgetWidget::onSetHomeAct_triggered()
     //Get desired HomeLocation altitude from dialog box.
     //TODO: Populate box with altitude already in HomeLocation UAVO
     altitude = QInputDialog::getDouble(this, tr("Set home altitude"),
-                                      tr("In [m], referenced to WGS84:"), altitude, -100, 100000, 2, &ok);
+                                      tr("In [m], referenced to WGS84 geoid:"), altitude, -100, 100000, 2, &ok);
 
     if(ok){
         setHome(m_context_menu_lat_lon, altitude);
@@ -1804,7 +1807,6 @@ void OPMapGadgetWidget::onOpenWayPointEditorAct_triggered()
     //create dialog
     pathPlannerDialog = new QDialog(this);
     pathPlannerDialog->setModal(true);
-    pathPlannerDialog->show();
 
     //create layout dialog
     QHBoxLayout *dialogLayout = new QHBoxLayout(pathPlannerDialog);
@@ -1812,6 +1814,8 @@ void OPMapGadgetWidget::onOpenWayPointEditorAct_triggered()
     //create elements of dialog
     QPointer<PathPlannerGadgetWidget> widget = new PathPlannerGadgetWidget(pathPlannerDialog);
     dialogLayout->addWidget(widget);
+    pathPlannerDialog->show();
+    pathPlannerDialog->resize(850,300);
 }
 
 void OPMapGadgetWidget::onAddWayPointAct_triggeredFromContextMenu()
@@ -2186,8 +2190,8 @@ void OPMapGadgetWidget::on_tbFind_clicked()
 {
     QPalette pal = m_widget->leFind->palette();
 
-    int result=m_map->SetCurrentPositionByKeywords(m_widget->leFind->text());
-    if(result==core::GeoCoderStatusCode::G_GEO_SUCCESS)
+    GeoCoderStatusCode::Types result=m_map->SetCurrentPositionByKeywords(m_widget->leFind->text());
+    if(result==core::GeoCoderStatusCode::OK)
     {
         pal.setColor( m_widget->leFind->backgroundRole(), Qt::green);
         m_widget->leFind->setPalette(pal);

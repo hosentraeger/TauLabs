@@ -42,7 +42,6 @@
 #include "coordinate_conversions.h"
 
 #include "modulesettings.h"
-#include "adcrouting.h"
 #include "gpsvelocity.h"
 #include "airspeedsettings.h"
 #include "gps_airspeed.h"
@@ -153,24 +152,17 @@ int32_t AirspeedInitialize()
 	if (!module_enabled)
 		return -1;
 
-#ifdef BARO_AIRSPEED_PRESENT
-	ADCRoutingInitialize();
-	uint8_t adc_channel_map[ADCROUTING_CHANNELMAP_NUMELEM];	
-	ADCRoutingChannelMapGet(adc_channel_map);
-	
-	//Determine if the barometric airspeed sensor is routed to an ADC pin 
-	for (int i = 0; i < ADCROUTING_CHANNELMAP_NUMELEM; i++) {
-		if (adc_channel_map[i] == ADCROUTING_CHANNELMAP_ANALOGAIRSPEED) {
-			airspeedADCPin = i;
-		}
-	}
-	
-#endif	
-	
 	BaroAirspeedInitialize();
 	AirspeedActualInitialize();
 	AirspeedSettingsInitialize();
-	
+
+#ifdef BARO_AIRSPEED_PRESENT
+	// Get the analog pin
+	AirspeedSettingsAnalogPinGet((uint8_t *) &airspeedADCPin);
+	if (airspeedADCPin == AIRSPEEDSETTINGS_ANALOGPIN_NONE)
+		airspeedADCPin = -1;
+#endif
+
 	AirspeedSettingsConnectCallback(AirspeedSettingsUpdatedCb);	
 	
 	return 0;
@@ -216,7 +208,7 @@ static void airspeedTask(void *parameters)
 		if(airspeedSensorType != AIRSPEEDSETTINGS_AIRSPEEDSENSORTYPE_GPSONLY) {
 			//Fetch calibrated airspeed from sensors
 			baro_airspeedGet(&airspeedData, &lastSysTime, airspeedSensorType, airspeedADCPin);
-			
+
 			//Calculate true airspeed, not taking into account compressibility effects
 			int16_t groundTemperature_10;
 			float groundTemperature;
@@ -237,7 +229,6 @@ static void airspeedTask(void *parameters)
 			//No GPS, so TAS comes only from baro sensor
 			airspeedData.TrueAirspeed = cas2tas(airspeedData.CalibratedAirspeed, -positionActual_Down, &air_STP) + airspeedErrInt * GPS_AIRSPEED_BIAS_KI;
  #endif			
-			
 		}
 		else
 #endif
@@ -246,7 +237,7 @@ static void airspeedTask(void *parameters)
 			airspeedData.SensorValue=12345;
 			
 			//Likely, we have a GPS, so let's configure the fallthrough at close to GPS refresh rates
-			vTaskDelayUntil(&lastSysTime, SAMPLING_DELAY_MS_FALLTHROUGH * portTICK_RATE_MS);
+			vTaskDelayUntil(&lastSysTime, MS2TICKS(SAMPLING_DELAY_MS_FALLTHROUGH));
 		}
 		
 #ifdef GPS_AIRSPEED_PRESENT
@@ -256,9 +247,9 @@ static void airspeedTask(void *parameters)
 		//sensor or not. In the case we do, shoot for about once per second. Otherwise, consume GPS
 		//as quickly as possible.
  #ifdef BARO_AIRSPEED_PRESENT
-		float delT = (lastSysTime - lastLoopTime)/(portTICK_RATE_MS*1000.0f);
+		float delT = TICKS2MS(lastSysTime - lastLoopTime) / 1000.0f;
 		lastLoopTime=lastSysTime;
-		if ( ((lastSysTime - lastGPSTime) > 1000*portTICK_RATE_MS || airspeedSensorType==AIRSPEEDSETTINGS_AIRSPEEDSENSORTYPE_GPSONLY)
+		if ( (TICKS2MS(lastSysTime - lastGPSTime) > 1000 || airspeedSensorType==AIRSPEEDSETTINGS_AIRSPEEDSENSORTYPE_GPSONLY)
 				&& gpsNew) {
 			lastGPSTime=lastSysTime;
  #else
@@ -345,32 +336,27 @@ static void GPSVelocityUpdatedCb(UAVObjEvent * ev)
 }
 #endif
 
-void baro_airspeedGet(BaroAirspeedData *baroAirspeedData, portTickType *lastSysTime, uint8_t airspeedSensorType, int8_t airspeedADCPin_dummy){
-	
+#ifdef BARO_AIRSPEED_PRESENT
+void baro_airspeedGet(BaroAirspeedData *baroAirspeedData, portTickType *lastSysTime, uint8_t airspeedSensorType, int8_t airspeedADCPin_dummy)
+{
 	//Find out which sensor we're using.
 	switch (airspeedSensorType) {
-#if defined(PIOS_INCLUDE_MPXV7002)
 		case AIRSPEEDSETTINGS_AIRSPEEDSENSORTYPE_DIYDRONESMPXV7002:
-#endif
-#if defined(PIOS_INCLUDE_MPXV5004)
 		case AIRSPEEDSETTINGS_AIRSPEEDSENSORTYPE_DIYDRONESMPXV5004:
-#endif
-#if defined(PIOS_INCLUDE_MPXV7002) || defined(PIOS_INCLUDE_MPXV5004)
 			//MPXV5004 and MPXV7002 sensors
 			baro_airspeedGetAnalog(baroAirspeedData, lastSysTime, airspeedSensorType, airspeedADCPin);
 			break;
-#endif
-#if defined(PIOS_INCLUDE_ETASV3)
 		case AIRSPEEDSETTINGS_AIRSPEEDSENSORTYPE_EAGLETREEAIRSPEEDV3:
 			//Eagletree Airspeed v3
 			baro_airspeedGetETASV3(baroAirspeedData, lastSysTime, airspeedSensorType, airspeedADCPin);
 			break;
-#endif
 		default:
 			baroAirspeedData->BaroConnected = BAROAIRSPEED_BAROCONNECTED_FALSE;
+			vTaskDelayUntil(lastSysTime, MS2TICKS(SAMPLING_DELAY_MS_FALLTHROUGH));
+			break;
 	}
 }
-
+#endif
 
 static void AirspeedSettingsUpdatedCb(UAVObjEvent * ev)
 {

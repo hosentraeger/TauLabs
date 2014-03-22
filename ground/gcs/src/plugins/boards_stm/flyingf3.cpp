@@ -28,6 +28,11 @@
 
 #include "flyingf3.h"
 
+#include <uavobjectmanager.h>
+#include "uavobjectutil/uavobjectutilmanager.h"
+#include <extensionsystem/pluginmanager.h>
+
+#include "hwflyingf3.h"
 /**
  * @brief FlyingF3::FlyingF3
  *  This is the Flying F3 board definition
@@ -42,6 +47,13 @@ FlyingF3::FlyingF3(void)
     setUSBInfo(board);
 
     boardType = 0x83;
+
+    // Define the bank of channels that are connected to a given timer
+    channelBanks.resize(6);
+    channelBanks[0] = QVector<int> () << 1 << 2 << 3 << 4;
+    channelBanks[1] = QVector<int> () << 5 << 6 << 7;
+    channelBanks[2] = QVector<int> () << 8 << 9 << 10;
+    channelBanks[3] = QVector<int> () << 11;
 }
 
 FlyingF3::~FlyingF3()
@@ -77,11 +89,6 @@ bool FlyingF3::queryCapabilities(BoardCapabilities capability)
     return false;
 }
 
-QStringList FlyingF3::queryChannelBanks()
-{
-    return QStringList(QStringList() << "1-4" << "5-7" << "8-10" << "11");
-}
-
 
 /**
  * @brief FlyingF3::getSupportedProtocols
@@ -102,4 +109,29 @@ QPixmap FlyingF3::getBoardPicture()
 QString FlyingF3::getHwUAVO()
 {
     return "HwFlyingF3";
+}
+
+int FlyingF3::queryMaxGyroRate()
+{
+    ExtensionSystem::PluginManager *pm = ExtensionSystem::PluginManager::instance();
+    UAVObjectManager *uavoManager = pm->getObject<UAVObjectManager>();
+    HwFlyingF3 *hwFlyingF3 = HwFlyingF3::GetInstance(uavoManager);
+    Q_ASSERT(hwFlyingF3);
+    if (!hwFlyingF3)
+        return 0;
+
+    HwFlyingF3::DataFields settings = hwFlyingF3->getData();
+
+    switch(settings.GyroRange) {
+    case HwFlyingF3::GYRORANGE_250:
+        return 250;
+    case HwFlyingF3::GYRORANGE_500:
+        return 500;
+    case HwFlyingF3::GYRORANGE_1000:
+        return 1000;
+    case HwFlyingF3::GYRORANGE_2000:
+        return 2000;
+    default:
+        return 500;
+    }
 }

@@ -58,7 +58,7 @@ static bool path_status_updated;
 // Private functions
 static void advanceWaypoint();
 static void checkTerminationCondition();
-static void activateWaypoint();
+static void activateWaypoint(int idx);
 
 static void pathPlannerTask(void *parameters);
 static void settingsUpdated(UAVObjEvent * ev);
@@ -154,7 +154,7 @@ static void pathPlannerTask(void *parameters)
 	while (1)
 	{
 
-		vTaskDelay(UPDATE_RATE_MS / portTICK_RATE_MS);
+		vTaskDelay(MS2TICKS(UPDATE_RATE_MS));
 
 		// When not running the path planner short circuit and wait
 		FlightStatusGet(&flightStatus);
@@ -321,6 +321,9 @@ static void activateWaypoint(int idx)
 			break;
 		case WAYPOINT_MODE_FLYCIRCLERIGHT:
 			pathDesired.Mode = PATHDESIRED_MODE_FLYCIRCLERIGHT;
+			break;
+		case WAYPOINT_MODE_LAND:
+			pathDesired.Mode = PATHDESIRED_MODE_LAND;
 			break;
 		default:
 			holdCurrentPosition();

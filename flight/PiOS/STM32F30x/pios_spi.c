@@ -53,23 +53,10 @@ static bool PIOS_SPI_validate(struct pios_spi_dev *com_dev)
 	return (true);
 }
 
-#if defined(PIOS_INCLUDE_FREERTOS)
 static struct pios_spi_dev *PIOS_SPI_alloc(void)
 {
-	return (pvPortMalloc(sizeof(struct pios_spi_dev)));
+	return (PIOS_malloc(sizeof(struct pios_spi_dev)));
 }
-#else
-static struct pios_spi_dev pios_spi_devs[PIOS_SPI_MAX_DEVS];
-static uint8_t pios_spi_num_devs;
-static struct pios_spi_dev *PIOS_SPI_alloc(void)
-{
-	if (pios_spi_num_devs >= PIOS_SPI_MAX_DEVS) {
-		return (NULL);
-	}
-
-	return (&pios_spi_devs[pios_spi_num_devs++]);
-}
-#endif
 
 /**
 * Initialises SPI pins
@@ -91,10 +78,7 @@ int32_t PIOS_SPI_Init(uint32_t *spi_id, const struct pios_spi_cfg *cfg)
 	/* Bind the configuration to the device instance */
 	spi_dev->cfg = cfg;
 
-#if defined(PIOS_INCLUDE_FREERTOS)
-	vSemaphoreCreateBinary(spi_dev->busy);
-	xSemaphoreGive(spi_dev->busy);
-#endif
+	spi_dev->busy = PIOS_Semaphore_Create();
 
 	/* Disable callback function */
 	spi_dev->callback = NULL;
@@ -220,27 +204,45 @@ out_fail:
  * \return -1 if disabled SPI port selected
  * \return -3 if invalid spi_prescaler selected
  */
-int32_t PIOS_SPI_SetClockSpeed(uint32_t spi_id, SPIPrescalerTypeDef spi_prescaler)
+int32_t PIOS_SPI_SetClockSpeed(uint32_t spi_id, uint32_t spi_speed)
 {
 	struct pios_spi_dev *spi_dev = (struct pios_spi_dev *)spi_id;
 
 	bool valid = PIOS_SPI_validate(spi_dev);
-	PIOS_Assert(valid)
+	PIOS_Assert(valid);
 
 	SPI_InitTypeDef SPI_InitStructure;
 
-	if (spi_dev->cfg->regs == SPI1) {
-		//APB2 == 72MHz
-		//divide by 2 to match frequency
-		spi_prescaler += 1;
-	} else {
-		//APB1 == 36MHz
-	}
+	SPIPrescalerTypeDef spi_prescaler;
 
-	if (spi_prescaler >= 8) {
-		/* Invalid prescaler selected */
-		return -3;
-	}
+	//SPI clock is different depending on the bus
+	uint32_t spiBusClock = 0;
+
+	if(spi_dev->cfg->regs == SPI1)
+		spiBusClock = PIOS_SYSCLK / 2;
+	else
+		spiBusClock = PIOS_SYSCLK;
+
+	//The needed prescaler for desired speed
+	float desiredPrescaler=(float) spiBusClock / spi_speed;
+
+	//Choosing the existing prescaler nearest the desiredPrescaler
+	if(desiredPrescaler <= 2)
+		spi_prescaler = PIOS_SPI_PRESCALER_2;
+	else if(desiredPrescaler <= 4)
+		spi_prescaler = PIOS_SPI_PRESCALER_4;
+	else if(desiredPrescaler <= 8)
+		spi_prescaler = PIOS_SPI_PRESCALER_8;
+	else if(desiredPrescaler <= 16)
+		spi_prescaler = PIOS_SPI_PRESCALER_16;
+	else if(desiredPrescaler <= 32)
+		spi_prescaler = PIOS_SPI_PRESCALER_32;
+	else if(desiredPrescaler <= 64)
+		spi_prescaler = PIOS_SPI_PRESCALER_64;
+	else if(desiredPrescaler <= 128)
+		spi_prescaler = PIOS_SPI_PRESCALER_128;
+	else
+		spi_prescaler = PIOS_SPI_PRESCALER_256;
 
 	/* Start with a copy of the default configuration for the peripheral */
 	SPI_InitStructure = spi_dev->cfg->init;
@@ -252,7 +254,9 @@ int32_t PIOS_SPI_SetClockSpeed(uint32_t spi_id, SPIPrescalerTypeDef spi_prescale
 	SPI_Init(spi_dev->cfg->regs, &SPI_InitStructure);
 
 	PIOS_SPI_TransferByte(spi_id, 0xFF);
-	return 0;
+
+	//return set speed
+	return spiBusClock / spi_prescaler;
 }
 
 /**
@@ -268,23 +272,9 @@ int32_t PIOS_SPI_ClaimBus(uint32_t spi_id)
 	bool valid = PIOS_SPI_validate(spi_dev);
 	PIOS_Assert(valid)
 
-#if defined(PIOS_INCLUDE_FREERTOS)
-	if (xSemaphoreTake(spi_dev->busy, 0xffff) != pdTRUE)
-		return -1;
-#else
-	uint32_t timeout = 0xffff;
-	while ((PIOS_SPI_Busy(spi_id) || spi_dev->busy) && --timeout);
-	if (timeout == 0) //timed out
+	if (PIOS_Semaphore_Take(spi_dev->busy, 65535) != true)
 		return -1;
 
-	PIOS_IRQ_Disable();
-	if (spi_dev->busy) {
-		PIOS_IRQ_Enable();
-		return -1;
-	}
-	spi_dev->busy = 1;
-	PIOS_IRQ_Enable();
-#endif
 	return 0;
 }
 
@@ -302,27 +292,9 @@ int32_t PIOS_SPI_ClaimBusISR(uint32_t spi_id, bool *woken)
 	bool valid = PIOS_SPI_validate(spi_dev);
 	PIOS_Assert(valid)
 
-#if defined(PIOS_INCLUDE_FREERTOS)
-	portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
-
-	if (xQueueReceiveFromISR((xQueueHandle) spi_dev->busy, NULL, &xHigherPriorityTaskWoken) != pdTRUE)
+	if (PIOS_Semaphore_Take_FromISR(spi_dev->busy, woken) != true)
 		return -1;
 
-	*woken = *woken || (xHigherPriorityTaskWoken == pdTRUE);
-#else
-	uint32_t timeout = 0xffff;
-	while ((PIOS_SPI_Busy(spi_id) || spi_dev->busy) && --timeout);
-	if (timeout == 0) //timed out
-		return -1;
-
-	PIOS_IRQ_Disable();
-	if (spi_dev->busy) {
-		PIOS_IRQ_Enable();
-		return -1;
-	}
-	spi_dev->busy = 1;
-	PIOS_IRQ_Enable();
-#endif
 	return 0;
 }
 
@@ -339,13 +311,8 @@ int32_t PIOS_SPI_ReleaseBus(uint32_t spi_id)
 	bool valid = PIOS_SPI_validate(spi_dev);
 	PIOS_Assert(valid)
 
-#if defined(PIOS_INCLUDE_FREERTOS)
-	xSemaphoreGive(spi_dev->busy);
-#else
-	PIOS_IRQ_Disable();
-	spi_dev->busy = 0;
-	PIOS_IRQ_Enable();
-#endif
+	PIOS_Semaphore_Give(spi_dev->busy);
+
 	return 0;
 }
 
@@ -362,17 +329,8 @@ int32_t PIOS_SPI_ReleaseBusISR(uint32_t spi_id, bool *woken)
 	bool valid = PIOS_SPI_validate(spi_dev);
 	PIOS_Assert(valid)
 
-#if defined(PIOS_INCLUDE_FREERTOS)
-	portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
+	PIOS_Semaphore_Give_FromISR(spi_dev->busy, woken);
 
-	xSemaphoreGiveFromISR(spi_dev->busy, &xHigherPriorityTaskWoken);
-
-	*woken = *woken || (xHigherPriorityTaskWoken == pdTRUE);
-#else
-	PIOS_IRQ_Disable();
-	spi_dev->busy = 0;
-	PIOS_IRQ_Enable();
-#endif
 	return 0;
 }
 

@@ -61,7 +61,7 @@ ImportSummaryDialog::~ImportSummaryDialog()
   */
 void ImportSummaryDialog::openHelp()
 {
-    QDesktopServices::openUrl( QUrl("http://wiki.openpilot.org/display/Doc/UAV+Settings+import-export", QUrl::StrictMode) );
+    QDesktopServices::openUrl( QUrl("http://wiki.taulabs.org/OnlineHelp:-UAV-Settings-import-export", QUrl::StrictMode) );
 }
 
 /*

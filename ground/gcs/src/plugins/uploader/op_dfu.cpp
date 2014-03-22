@@ -43,14 +43,7 @@ DFUObject::DFUObject(bool _debug,bool _use_serial,QString portname):
 
     if(use_serial)
     {
-        PortSettings settings;
-        settings.BaudRate=BAUD57600;
-        settings.DataBits=DATA_8;
-        settings.FlowControl=FLOW_OFF;
-        settings.Parity=PAR_NONE;
-        settings.StopBits=STOP_1;
-        settings.Timeout_Millisec=1000;
-        info = new port(settings,portname);
+        info = new port(portname);
         info->rxBuf 		= sspRxBuf;
         info->rxBufSize 	= MAX_PACKET_DATA_LEN;
         info->txBuf 		= sspTxBuf;
@@ -106,14 +99,11 @@ DFUObject::DFUObject(bool _debug,bool _use_serial,QString portname):
                 USBSignalFilter filter(vendorID,-1,-1,USBMonitor::Bootloader);
                 connect(&filter, SIGNAL(deviceDiscovered()),&m_eventloop, SLOT(quit()));
             }
-            for(int x=0;x<4;++x)
+            for(int x=0;x<20;++x)
             {
                 qDebug()<<"OP_DFU trying to detect bootloader:"<<x;
 
-                if(x==0)
-                    QTimer::singleShot(10000,&m_eventloop, SLOT(quit()));
-                else
-                    QTimer::singleShot(2000,&m_eventloop, SLOT(quit()));
+                QTimer::singleShot(1000,&m_eventloop, SLOT(quit()));
                 m_eventloop.exec();
                 devices.clear();
                 foreach(int vendorID, brdVID) {
@@ -269,7 +259,7 @@ bool DFUObject::UploadData(qint32 const & numberOfBytes, QByteArray  & data)
     buf[1] = OP_DFU::Upload;//DFU Command
     int packetsize;
     float percentage;
-    int laspercentage;
+    int laspercentage = 0;
     for(qint32 packetcount=0;packetcount<numberOfPackets;++packetcount)
     {
         percentage=(float)(packetcount+1)/numberOfPackets*100;
@@ -334,7 +324,7 @@ OP_DFU::Status DFUObject::UploadDescription(QVariant desc)
             padding.fill(' ',pad);
             description.append(padding);
         }
-        array=description.toAscii();
+        array=description.toLatin1();
 
     } else if (desc.type() == QVariant::ByteArray) {
         array = desc.toByteArray();
@@ -460,7 +450,7 @@ bool DFUObject::StartDownloadT(QByteArray *fw, qint32 const & numberOfBytes, Tra
     if(debug)
         qDebug() << "StartDownload:"<<numberOfPackets<<"packets"<<" Last Packet Size="<<lastPacketCount<<" "<<result << " bytes sent";
     float percentage;
-    int laspercentage;
+    int laspercentage = 0;
 
     // Now get those packets:
     for(qint32 x=0;x<numberOfPackets;++x)
@@ -1013,10 +1003,10 @@ int DFUObject::sendData(void * data,int size)
         return hidHandle.send(0,data, size, 5000);
 
     // Serial Mode:
-    if(serialhandle->sendData((uint8_t*)data+1,size-1))
+    if(serialhandle->sendData((quint8*)data+1,size-1))
     {
          if (debug)
-            qDebug() << "packet sent" << "data0" << ((uint8_t*)data+1)[0];
+            qDebug() << "packet sent" << "data0" << ((quint8*)data+1)[0];
         return size;
     }
     if(debug)

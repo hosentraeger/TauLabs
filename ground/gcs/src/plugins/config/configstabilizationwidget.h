@@ -33,7 +33,7 @@
 #include "uavobjectmanager.h"
 #include "uavobject.h"
 #include "stabilizationsettings.h"
-#include <QtGui/QWidget>
+#include <QWidget>
 #include <QTimer>
 
 
@@ -52,6 +52,7 @@ private slots:
     void realtimeUpdatesSlot(int);
     void linkCheckBoxes(int value);
     void processLinkedWidgets(QWidget*);
+    void applyRateLimits();
 };
 
 #endif // ConfigStabilizationWidget_H
