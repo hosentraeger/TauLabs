@@ -44,6 +44,17 @@
 #include "manualcontrolsettings.h"
 #include "modulesettings.h"
 
+#if defined(PIOS_INCLUDE_HMC5883)
+#include "pios_hmc5883_priv.h"
+static const struct pios_hmc5883_cfg pios_hmc5883_external_cfg = {
+	.M_ODR = PIOS_HMC5883_ODR_75,
+	.Meas_Conf = PIOS_HMC5883_MEASCONF_NORMAL,
+	.Gain = PIOS_HMC5883_GAIN_1_9,
+	.Mode = PIOS_HMC5883_MODE_SINGLE,
+	.Default_Orientation = PIOS_HMC5883_TOP_0DEG,
+};
+#endif /* PIOS_INCLUDE_HMC5883 */
+
 /**
  * Configuration for the MS5611 chip
  */
@@ -1070,10 +1081,39 @@ void PIOS_Board_Init(void) {
 				PIOS_MPU6050_SetAccelRange(PIOS_MPU60X0_ACCEL_16G);
 				break;
 		}
+	PIOS_MPU6050_SetPassThrough(true);
 	}
 
 #endif /* PIOS_INCLUDE_MPU6050 */
 
+#if defined(PIOS_INCLUDE_HMC5883)
+	{
+			if (PIOS_HMC5883_Init(pios_i2c_internal_id, &pios_hmc5883_external_cfg) != 0)
+				panic(3);
+			if (PIOS_HMC5883_Test() != 0)
+				panic(3);
+
+			// setup sensor orientation
+/*
+			uint8_t ExtMagOrientation;
+			HwFlyingF4ExtMagOrientationGet(&ExtMagOrientation);
+*/
+			enum pios_hmc5883_orientation hmc5883_orientation = \
+				PIOS_HMC5883_BOTTOM_0DEG;
+/*
+				(ExtMagOrientation == HWFLYINGF4_EXTMAGORIENTATION_TOP0DEGCW) ? PIOS_HMC5883_TOP_0DEG : \
+				(ExtMagOrientation == HWFLYINGF4_EXTMAGORIENTATION_TOP90DEGCW) ? PIOS_HMC5883_TOP_90DEG : \
+				(ExtMagOrientation == HWFLYINGF4_EXTMAGORIENTATION_TOP180DEGCW) ? PIOS_HMC5883_TOP_180DEG : \
+				(ExtMagOrientation == HWFLYINGF4_EXTMAGORIENTATION_TOP270DEGCW) ? PIOS_HMC5883_TOP_270DEG : \
+				(ExtMagOrientation == HWFLYINGF4_EXTMAGORIENTATION_BOTTOM0DEGCW) ? PIOS_HMC5883_BOTTOM_0DEG : \
+				(ExtMagOrientation == HWFLYINGF4_EXTMAGORIENTATION_BOTTOM90DEGCW) ? PIOS_HMC5883_BOTTOM_90DEG : \
+				(ExtMagOrientation == HWFLYINGF4_EXTMAGORIENTATION_BOTTOM180DEGCW) ? PIOS_HMC5883_BOTTOM_180DEG : \
+				(ExtMagOrientation == HWFLYINGF4_EXTMAGORIENTATION_BOTTOM270DEGCW) ? PIOS_HMC5883_BOTTOM_270DEG : \
+				pios_hmc5883_external_cfg.Default_Orientation;
+*/
+			PIOS_HMC5883_SetOrientation(hmc5883_orientation);
+	}
+#endif
 	//I2C is slow, sensor init as well, reset watchdog to prevent reset here
 	PIOS_WDG_Clear();
 

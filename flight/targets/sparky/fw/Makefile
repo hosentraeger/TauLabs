@@ -144,6 +144,7 @@ SRC += $(PIOSCOMMON)/pios_dma.c
 SRC += $(PIOSCOMMON)/pios_adc.c
 SRC += $(PIOSCOMMON)/pios_heap.c
 SRC += $(PIOSCOMMON)/pios_semaphore.c
+SRC += $(PIOSCOMMON)/pios_hmc5883.c
 
 
 include ./UAVObjects.inc
